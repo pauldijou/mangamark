@@ -1,0 +1,45 @@
+{
+  "manifest_version": 2,
+
+  "name": "__MSG_name__",
+  "description": "__MSG_description__",
+  "version": "0.0.1",
+
+  "default_locale": "en",
+
+  "icons": {
+    "16": "icons/icon16.png",
+    "19": "icons/icon19.png",
+    "38": "icons/icon38.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+
+  "browser_action": {
+    "default_icon": "icons/icon19.png",
+    "default_popup": "popup/popup.html",
+    "default_title": "Manga Bookmarker"
+  },
+
+  "background": {
+    "persistent": true,
+    "scripts": [ "build/background.js" ]
+  },
+
+  "options_ui": {
+    "page": "options/options.html",
+    "chrome_style": true
+  },
+
+  "permissions": [
+    "storage",
+    "notifications",
+    "http://mangareader.net/",
+    "http://www.mangareader.net/"
+  ],
+
+  "content_scripts": [{
+    "matches": ["http://*/**"],
+    "js": ["build/contentScript.js"]
+  }]
+}

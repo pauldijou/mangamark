@@ -1,0 +1,34 @@
+{
+  "compilerOptions": {
+    "outDir": "./build/",
+    "sourceMap": true,
+    "target": "es5"
+  },
+  "files": [
+    "./typings/main.d.ts",
+    "./types/main.d.ts",
+    "src/background.ts",
+    "src/content-script.ts",
+    "src/debug.ts",
+    "src/manga.ts",
+    "src/messages.ts",
+    "src/options.ts",
+    "src/popup.ts",
+    "src/readers/index.ts",
+    "src/readers/Mangareader.ts",
+    "src/readers/Reader.ts",
+    "src/settings.ts",
+    "src/start.ts",
+    "src/storage.ts",
+    "src/types.ts",
+    "src/utils.ts"
+  ],
+  "filesGlob": [
+    "./typings/main.d.ts",
+    "./types/main.d.ts",
+    "src/**/*.ts"
+  ],
+  "atom": {
+    "rewriteTsconfig": true
+  }
+}
