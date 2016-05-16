@@ -5,8 +5,13 @@
     "snabbdom": "^0.4.2"
   },
   "devDependencies": {
+    "css-loader": "^0.23.1",
+    "extract-text-webpack-plugin": "^1.0.1",
     "json-loader": "^0.5.4",
+    "less": "^2.7.1",
+    "less-loader": "^2.2.3",
     "source-map-loader": "^0.1.5",
+    "style-loader": "^0.13.1",
     "ts-loader": "^0.8.2",
     "typescript": "^1.8.10",
     "typings": "^0.8.1",

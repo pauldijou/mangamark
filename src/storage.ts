@@ -45,22 +45,14 @@ export function refresh(): Promise<Storage> {
   });
 }
 
-function isStoredManga(key: String, item: Settings | StoredManga): item is StoredManga {
-  return key.indexOf('m_') === 0 && (<StoredManga>item).i !== undefined;
-}
-
 export function normalize(storage: RawStorage): Storage {
-  const mangas: Array<Manga> = [];
+  const mangas: Array<Manga> = Object.keys(storage)
+    .map(key => parseInt(key, 10))
+    .filter((<any>Number).isFinite)
+    .map(key => storage[key])
+    .map(fromStorage);
 
-  Object.keys(storage)
-    .forEach(function (key) {
-      const item = storage[key];
-      if (isStoredManga(key, item)) {
-        mangas.push(fromStorage(item));
-      }
-    });
-
-  return { settings: storage.settings, mangas };
+  return { version: storage.version, settings: storage.settings, mangas };
 }
 
 export function getManga(reader: ReaderId, slug: string): Option<Manga> {

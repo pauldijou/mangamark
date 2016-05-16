@@ -1,0 +1,41 @@
+@import '../styles/variables';
+@import '../styles/reset';
+
+#popup {
+  width: 500px;
+  padding: 10px;
+
+  .menu {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+
+    h1 {
+      flex-grow: 1;
+      font-size: 16px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin: 0;
+      padding: 0;
+    }
+
+    button {
+      background: white;
+      border: 3px solid black;
+      border-radius: 5px;
+      padding: 5px;
+      cursor: pointer;
+      margin-left: 10px;
+
+      &:hover {
+        background: #ddd;
+      }
+    }
+  }
+
+  .empty {
+    padding: 20px;
+    text-align: center;
+  }
+}

@@ -1,16 +1,15 @@
-// import { load } from 'cheerio';
 import * as snabbdom from 'snabbdom';
 import snabbdomClass = require('snabbdom/modules/class');
 import snabbdomStyle = require('snabbdom/modules/style');
 import snabbdomEvents = require('snabbdom/modules/eventlisteners');
 import h = require('snabbdom/h');
 
-import start from './start';
-import { onStorageUpdated } from './messages';
-import { get as getStorage } from './storage';
-import { Manga, Storage } from './types';
+import start from '../start';
+import { onStorageUpdated } from '../messages';
+import { get as getStorage } from '../storage';
+import { Manga, Storage } from '../types';
+import { log } from '../debug';
 
-console.log('LOAD POPUP.JS');
 
 const container = document.getElementById('popup');
 let popup: SnabbdomElement;
@@ -25,20 +24,35 @@ start.then(getStorage).then(function (storage: Storage) {
   popup = patch(container, render(storage));
 
   onStorageUpdated(function (storage: Storage) {
-    console.log('onStorageUpdate', storage);
+    log('onStorageUpdate', storage);
     popup = update(patch, popup, storage);
   });
 });
+
+function renderMenu(): SnabbdomElement {
+  return h('div.menu', {}, [
+    h('h1', {}, 'MangaMark'),
+    h('button', { type: 'button', on: { click: openOptions } }, 'Options'),
+    h('button', { type: 'button', on: { click: refresh } }, 'Refresh'),
+  ]);
+}
 
 function renderManga(manga: Manga): SnabbdomElement {
   return h('li', {}, manga.name);
 }
 
+function renderMangas(mangas: Array<Manga>): SnabbdomElement {
+  if (mangas.length === 0) {
+    return h('div.empty', {}, 'You don\'t have any manga yet');
+  }
+
+  return h('ul', {}, mangas.map(renderManga));
+}
+
 function render(storage: Storage): SnabbdomElement {
   return h('div', {}, [
-    h('button', { type: 'button', on: { click: openOptions } }, 'Options'),
-    h('div', {}, `You have ${storage.mangas.length} mangas`),
-    h('ul', {}, storage.mangas.map(renderManga))
+    renderMenu(),
+    renderMangas(storage.mangas)
   ]);
 }
 
@@ -52,6 +66,10 @@ function openOptions() {
   if (chrome.runtime.openOptionsPage) {
     chrome.runtime.openOptionsPage();
   } else {
-    window.open(chrome.runtime.getURL('options/options.html'));
+    window.open(chrome.runtime.getURL('options.html'));
   }
+}
+
+function refresh() {
+  log('Refresh');
 }

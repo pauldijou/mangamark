@@ -1,11 +1,13 @@
 var path = require('path');
+var ExtractTextPlugin = require('extract-text-webpack-plugin');
 
 module.exports = {
   entry: {
     background: './src/background.ts',
-    options: './src/options.ts',
-    popup: './src/popup.ts',
+    options: './src/options/options.ts',
+    popup: './src/popup/popup.ts',
     contentScript: './src/content-script.ts',
+    styles: [ './src/options/options.less', './src/popup/popup.less' ]
   },
 
   output: {
@@ -28,10 +30,18 @@ module.exports = {
       {
         test: /\.ts$/,
         loader: 'ts-loader'
+      },
+      {
+        test: /\.less$/,
+        loader: ExtractTextPlugin.extract('style', 'css?sourceMap!less?sourceMap')
       }
     ],
     preLoaders: [
       { test: /\.js$/, loader: 'source-map-loader' }
     ]
-  }
+  },
+
+  plugins: [
+    new ExtractTextPlugin('styles.css')
+  ]
 };

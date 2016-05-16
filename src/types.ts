@@ -25,11 +25,13 @@ export interface StoredManga {
 }
 
 export interface RawStorage {
+  version: number,
   settings: Settings,
-  [propName: string]: Settings | StoredManga
+  [propName: number]: StoredManga
 }
 
 export interface Storage {
+  version: number,
   settings: Settings,
   mangas: Array<Manga>
 }
