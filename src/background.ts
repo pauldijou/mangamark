@@ -1,20 +1,9 @@
-import start from './start';
-import { onMangaRead, onChapterRead } from './messages';
-import { get as getReader } from './readers';
+import { refresh, get as getStorage } from './storage';
 import { log } from './debug';
+import { onDebug } from './messages';
 
-log('Load background.js');
+refresh();
 
-start.then(function () {
-  log('Loaded background.js');
-
-  onMangaRead(function (manga) {
-    const reader = getReader(manga.reader);
-    log('MangaRead', manga.reader, manga.slug, manga.total);
-  });
-
-  onChapterRead(function (chapter) {
-    const reader = getReader(chapter.reader);
-    log('ChapterRead', chapter.slug, chapter.chapter, chapter.pages.length);
-  });
+onDebug((values) => {
+  log(...values);
 });

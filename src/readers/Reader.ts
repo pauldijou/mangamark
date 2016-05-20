@@ -1,7 +1,7 @@
 import { Manga, ReaderId, ParsedManga, ParsedChapter } from '../types';
 import { assign, htmlToDocument } from '../utils';
 
-export abstract class Reader {
+abstract class Reader {
   id: ReaderId;
   baseUrl: string;
 
@@ -34,4 +34,21 @@ export abstract class Reader {
       .then(doc => this.parseManga('', doc))
       .then(parsedManga => assign(manga, parsedManga));
   }
+
+  isValidParsedManga(parsedManga: ParsedManga): boolean {
+    return parsedManga.name.length > 0
+      && parsedManga.slug.length > 0
+      && parsedManga.total > 0;
+  }
+
+  isValidParsedChapter(parsedChapter: ParsedChapter): boolean {
+    // We will not validate the total chapters for now
+    // (looks like it's injected afer dom loaded in mangareader)
+    return parsedChapter.name.length > 0
+      && parsedChapter.slug.length > 0
+      && parsedChapter.chapter > 0
+      && parsedChapter.pages.length > 0;
+  }
 }
+
+export default Reader;

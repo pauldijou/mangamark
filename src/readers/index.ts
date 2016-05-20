@@ -1,8 +1,9 @@
 import { ReaderId } from '../types';
-import { Reader } from './Reader';
+import Reader from './Reader';
 import Mangareader from './Mangareader';
 
 const mangareader = new Mangareader();
+
 
 export const all: Array<Reader> = [
   mangareader

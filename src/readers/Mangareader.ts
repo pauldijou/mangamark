@@ -1,4 +1,4 @@
-import { Reader } from './Reader';
+import Reader from './Reader';
 import { Option } from '../utils';
 
 export default class Mangareader extends Reader {
@@ -38,6 +38,8 @@ export default class Mangareader extends Reader {
       .map(h2 => h2.textContent)
       .map(text => text.replace(/Manga$/, '').trim())
       .getOrElse('');
+
+    console.log('PARSE CHAPTER', doc.getElementById('chapterMenu').innerHTML);
 
     const total = Option.wrap(doc.getElementById('chapterMenu'))
       .map(menu => menu.querySelectorAll('option'))

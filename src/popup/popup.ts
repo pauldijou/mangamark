@@ -4,30 +4,30 @@ import snabbdomStyle = require('snabbdom/modules/style');
 import snabbdomEvents = require('snabbdom/modules/eventlisteners');
 import h = require('snabbdom/h');
 
-import start from '../start';
-import { onStorageUpdated } from '../messages';
-import { get as getStorage } from '../storage';
+import { onStorageUpdated, sendGetStorage } from '../messages';
 import { Manga, Storage } from '../types';
 import { log } from '../debug';
+import { tryTo } from '../chrome';
 
 
 const container = document.getElementById('popup');
 let popup: SnabbdomElement;
 
-start.then(getStorage).then(function (storage: Storage) {
+sendGetStorage((initStorage) => {
   const patch = snabbdom.init([
     snabbdomClass,
     snabbdomStyle,
     snabbdomEvents
   ]);
 
-  popup = patch(container, render(storage));
+  popup = patch(container, render(initStorage));
 
   onStorageUpdated(function (storage: Storage) {
     log('onStorageUpdate', storage);
     popup = update(patch, popup, storage);
   });
-});
+})
+
 
 function renderMenu(): SnabbdomElement {
   return h('div.menu', {}, [
@@ -63,10 +63,12 @@ function update(patch: any, previous: SnabbdomElement, storage: Storage): Snabbd
 }
 
 function openOptions() {
-  if (chrome.runtime.openOptionsPage) {
+  if (chrome && chrome.runtime && chrome.runtime.openOptionsPage) {
     chrome.runtime.openOptionsPage();
   } else {
-    window.open(chrome.runtime.getURL('options.html'));
+    tryTo(['runtime', 'getURL'], (api) => {
+      window.open(api.getURL('options.html'));
+    });
   }
 }
 

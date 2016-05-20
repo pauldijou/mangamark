@@ -8,6 +8,7 @@
     "./typings/main.d.ts",
     "./types/main.d.ts",
     "src/background.ts",
+    "src/chrome.ts",
     "src/content-script.ts",
     "src/debug.ts",
     "src/manga.ts",
@@ -18,7 +19,6 @@
     "src/readers/Mangareader.ts",
     "src/readers/Reader.ts",
     "src/settings.ts",
-    "src/start.ts",
     "src/storage.ts",
     "src/types.ts",
     "src/utils.ts"

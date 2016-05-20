@@ -1,6 +1,10 @@
 import { Html } from './types';
 
 export function assign<T>(src: T, patch: Object): T {
+  return (<any>Object).assign(src, patch);
+}
+
+export function immUpdate<T>(src: T, patch: Object): T {
   return (<any>Object).assign({}, src, patch);
 }
 

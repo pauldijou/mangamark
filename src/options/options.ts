@@ -1,9 +1,3 @@
-import start from '../start';
-
-start.then(function () {
-
-});
-
 // // Saves options to chrome.storage.sync.
 // function save() {
 //   // var color = document.getElementById('color').value;
