@@ -9,8 +9,7 @@ import { Manga, Storage } from '../types';
 import { log } from '../debug';
 import { tryTo } from '../chrome';
 
-
-const container = document.getElementById('popup');
+const container = document.getElementById('mangamark-popup');
 let popup: SnabbdomElement;
 
 sendGetStorage((initStorage) => {
@@ -50,7 +49,7 @@ function renderMangas(mangas: Array<Manga>): SnabbdomElement {
 }
 
 function render(storage: Storage): SnabbdomElement {
-  return h('div', {}, [
+  return h('div#mangamark-popup', {}, [
     renderMenu(),
     renderMangas(storage.mangas)
   ]);
@@ -66,7 +65,7 @@ function openOptions() {
   if (chrome && chrome.runtime && chrome.runtime.openOptionsPage) {
     chrome.runtime.openOptionsPage();
   } else {
-    tryTo(['runtime', 'getURL'], (api) => {
+    tryTo(['runtime'], (api) => {
       window.open(api.getURL('options.html'));
     });
   }

@@ -24,8 +24,8 @@ abstract class Reader {
     return this.getChapterUrl(manga, manga.lastChapter);
   }
 
-  abstract parseManga(pathname: string, doc: Document): ParsedManga;
-  abstract parseChapter(pathname: string, doc: Document): ParsedChapter;
+  abstract parseManga(pathname: string, doc: Document): Promise<ParsedManga>;
+  abstract parseChapter(pathname: string, doc: Document): Promise<ParsedChapter>;
 
   checkManga(manga: Manga): Promise<Manga> {
     return fetch(this.getMangaUrl(manga))
@@ -42,10 +42,7 @@ abstract class Reader {
   }
 
   isValidParsedChapter(parsedChapter: ParsedChapter): boolean {
-    // We will not validate the total chapters for now
-    // (looks like it's injected afer dom loaded in mangareader)
-    return parsedChapter.name.length > 0
-      && parsedChapter.slug.length > 0
+    return this.isValidParsedManga(parsedChapter)
       && parsedChapter.chapter > 0
       && parsedChapter.pages.length > 0;
   }

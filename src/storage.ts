@@ -6,7 +6,9 @@ import { immUpdate, Option, Some, None } from './utils';
 import { defaultSettings } from './settings';
 import { tryTo } from './chrome';
 
-console.warn('Storage has been imported. If this is not the background task, please consider using messaging with response to have only one storage instance.');
+if (!location || !location.href || location.href.indexOf('background') < 0) {
+  console && console.warn('Storage has been imported. If this is not the background task, please consider using messaging with response to have only one storage instance.');
+}
 
 // This is a temporary solution to have flags,
 // we can do better
@@ -66,65 +68,6 @@ export function normalize(rawStorage: RawStorage): Storage {
     settings: immUpdate(defaultSettings, rawStorage.settings),
     mangas
   };
-}
-
-// Return a Manga from king of its primary key
-// - the reader where it is read
-// - its slug, the unique normalized url portion with its name
-export function getManga(reader: ReaderId, slug: string): Option<Manga> {
-  return Option.wrap(storage.mangas.filter(function (manga) {
-    return manga.reader === reader && manga.slug === slug;
-  })[0]);
-}
-
-function getNextId(): number {
-  return 1 + storage.mangas.reduce((id, manga) => Math.max(id, manga.id), 0)
-}
-
-export function updateMangas(mangas: Array<Manga>): Promise<string> {
-
-  return Promise.resolve("");
-}
-
-// From a parsed manga page, will try to update a known manga or create a new one if not
-// !! Do not save it in the online storage !!
-export function updateManga(parsed: ParsedManga): Manga {
-  return getManga(parsed.reader, parsed.slug)
-    .map(function (manga) {
-      return immUpdate(manga, {
-        totalChapters: parsed.total === 0 ? manga.totalChapters : parsed.total,
-      });
-    }).getOrElse({
-      id: getNextId(),
-      name: parsed.name,
-      slug: parsed.slug,
-      lastChapter: 0,
-      reader: parsed.reader,
-      lastRead: 0,
-      totalChapters: parsed.total,
-    });
-}
-
-// Same as updateManga but with a chapter number which will be used only if greater than the last chapter
-// !! Do not save it in the online storage !!
-export function updateChapter(parsed: ParsedChapter): Manga {
-  return getManga(parsed.reader, parsed.slug)
-    .map(function (manga) {
-      const lastChapter = Math.max(manga.lastChapter, parsed.chapter);
-      return immUpdate(manga, {
-        lastChapter: lastChapter,
-        lastRead: manga.lastChapter < lastChapter ? Date.now() : manga.lastRead,
-        totalChapters: parsed.total === 0 ? manga.totalChapters : parsed.total,
-      });
-    }).getOrElse({
-      id: getNextId(),
-      name: parsed.name,
-      slug: parsed.slug,
-      lastChapter: 0,
-      reader: parsed.reader,
-      lastRead: 0,
-      totalChapters: parsed.total,
-    });
 }
 
 function saveManga(manga: Manga): void {
