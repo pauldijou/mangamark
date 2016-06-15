@@ -3,6 +3,8 @@ interface SnabbdomElement {
 }
 
 interface Modules {
+  props: any;
+  attributes: any;
   class: any;
   style: any;
   eventlisteners: any;
@@ -22,6 +24,14 @@ declare module "snabbdom" {
 
 declare module "snabbdom/h" {
   export = snabbdom.h;
+}
+
+declare module "snabbdom/modules/props" {
+  export = snabbdom.modules.props;
+}
+
+declare module "snabbdom/modules/attributes" {
+  export = snabbdom.modules.attributes;
 }
 
 declare module "snabbdom/modules/class" {

@@ -59,3 +59,10 @@ export interface ParsedChapter extends ParsedManga {
   chapter: number,
   pages: Array<string>
 }
+
+export interface ParsedPage {
+  url: string,
+  width: number,
+  height: number,
+  isLarge: boolean
+}
