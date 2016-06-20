@@ -1,8 +1,4 @@
-import * as snabbdom from 'snabbdom';
-import snabbdomClass = require('snabbdom/modules/class');
-import snabbdomStyle = require('snabbdom/modules/style');
-import snabbdomEvents = require('snabbdom/modules/eventlisteners');
-import h = require('snabbdom/h');
+import { init as initSnabbdom, h, attributes, classList, events, SnabbdomElement } from '../snabbdom';
 
 import { onStorageUpdated, sendGetStorage } from '../messages';
 import { Manga, Storage } from '../types';
@@ -13,10 +9,10 @@ const container = document.getElementById('mangamark-popup');
 let popup: SnabbdomElement;
 
 sendGetStorage((initStorage) => {
-  const patch = snabbdom.init([
-    snabbdomClass,
-    snabbdomStyle,
-    snabbdomEvents
+  const patch = initSnabbdom([
+    attributes,
+    classList,
+    events
   ]);
 
   popup = patch(container, render(initStorage));

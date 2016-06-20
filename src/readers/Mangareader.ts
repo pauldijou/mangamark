@@ -23,12 +23,20 @@ export default class Mangareader extends Reader {
       .map(h2 => h2.textContent)
       .getOrElse('');
 
-    const total = Option.wrap(doc.getElementById('chapterlist'))
-      .map(list => list.querySelectorAll('tr'))
-      .map(trs => trs.length - 1)
-      .getOrElse(0);
+    const chapters = Option.wrap(doc.getElementById('chapterlist'))
+      .map(list => list.querySelectorAll('tr > td:first-child'))
+      .map(Array.from)
+      .map(tds => tds.map(td => ({
+        name: td.textContent.split(':').pop().trim(),
+        number: Option.wrap(td.querySelector('a'))
+          .map(a => a.getAttribute('href'))
+          .map(href => href.split('/').pop())
+          .map(num => parseInt(num, 10))
+          .getOrElse(0)
+      })))
+      .getOrElse([]);
 
-    return Promise.resolve({ reader: this.id, name, slug, total });
+    return Promise.resolve({ reader: this.id, name, slug, chapters });
   }
 
   parseChapter(doc: Document) {
@@ -41,11 +49,22 @@ export default class Mangareader extends Reader {
 
       const observer = new MutationObserver((mutations) => {
         observer.disconnect();
-        resolve(menu.querySelectorAll('option').length);
+
+        const chapters = [];
+        const options = menu.querySelectorAll('option');
+        for (let i = 0; i < options.length; ++i) {
+          const option = options[i];
+          const parts = option.getAttribute('value').split('/');
+          const number = parseInt(parts[parts.length - 1], 10);
+          const name = option.textContent;
+          chapters.push({ number, name });
+        }
+
+        resolve(chapters);
       });
 
       observer.observe(menu, { childList: true });
-    }).then(total => {
+    }).then(chapters => {
       const [a, slug, chapter, ...rest] = doc.location.pathname.split('/');
 
       const name = Option.wrap(doc.querySelector('h2.c2'))
@@ -64,7 +83,7 @@ export default class Mangareader extends Reader {
         })
         .getOrElse([]);
 
-      return { reader: this.id, total, name, slug, chapter: parseInt(chapter, 10), pages };
+      return { reader: this.id, chapters, name, slug, chapter: parseInt(chapter, 10), pages };
     });
   }
 

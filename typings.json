@@ -1,11 +1,10 @@
 {
   "name": "mangamark",
   "version": false,
+  "target": "es5",
   "dependencies": {},
-  "ambientDependencies": {
-    "es6-promise": "registry:dt/es6-promise#0.0.0+20160423074304"
-  },
-  "ambientDevDependencies": {
-    "whatwg-fetch": "registry:dt/whatwg-fetch#0.0.0+20160412133644"
+  "globalDependencies": {
+    "es6-shim": "registry:dt/es6-shim#0.31.2+20160602141504",
+    "whatwg-fetch": "registry:dt/whatwg-fetch#0.0.0+20160524142046"
   }
 }

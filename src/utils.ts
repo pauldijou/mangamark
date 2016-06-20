@@ -33,7 +33,7 @@ export function updateManga(mangas: Array<Manga>, parsed: ParsedManga): Manga {
   return getManga(mangas, parsed.reader, parsed.slug)
     .map(function (manga) {
       return immUpdate(manga, {
-        totalChapters: parsed.total === 0 ? manga.totalChapters : parsed.total,
+        totalChapters: parsed.chapters.length === 0 ? manga.totalChapters : parsed.chapters.length,
       });
     }).getOrElse({
       id: getNextId(mangas),
@@ -42,7 +42,7 @@ export function updateManga(mangas: Array<Manga>, parsed: ParsedManga): Manga {
       lastChapter: 0,
       reader: parsed.reader,
       lastRead: 0,
-      totalChapters: parsed.total,
+      totalChapters: parsed.chapters.length,
     });
 }
 
@@ -55,7 +55,7 @@ export function updateChapter(mangas: Array<Manga>, parsed: ParsedChapter): Mang
       return immUpdate(manga, {
         lastChapter: lastChapter,
         lastRead: manga.lastChapter < lastChapter ? Date.now() : manga.lastRead,
-        totalChapters: parsed.total === 0 ? manga.totalChapters : parsed.total,
+        totalChapters: parsed.chapters.length === 0 ? manga.totalChapters : parsed.chapters.length,
       });
     }).getOrElse({
       id: getNextId(mangas),
@@ -64,7 +64,7 @@ export function updateChapter(mangas: Array<Manga>, parsed: ParsedChapter): Mang
       lastChapter: 0,
       reader: parsed.reader,
       lastRead: 0,
-      totalChapters: parsed.total,
+      totalChapters: parsed.chapters.length,
     });
 }
 

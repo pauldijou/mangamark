@@ -1,10 +1,4 @@
-import * as snabbdom from 'snabbdom';
-import snabbdomAttributes = require('snabbdom/modules/attributes');
-import snabbdomClass = require('snabbdom/modules/class');
-import snabbdomStyle = require('snabbdom/modules/style');
-import snabbdomEvents = require('snabbdom/modules/eventlisteners');
-import h = require('snabbdom/h');
-
+import { init as initSnabbdom, h, attributes, classList, events, SnabbdomElement } from '../snabbdom';
 import { Storage, ParsedManga, ParsedChapter, ParsedPage } from '../types';
 import { sendDebug, onStorageUpdated, sendGetStorage } from '../messages';
 import { all } from '../readers';
@@ -15,17 +9,15 @@ import { tryTo } from '../chrome';
 console.log('INIT CONTENT SCRIPT');
 
 interface Page {
-  loaded: boolean,
   failed: boolean,
   name: string,
   value: Option<ParsedPage>
 }
 
-const patch = snabbdom.init([
-  snabbdomAttributes,
-  snabbdomClass,
-  snabbdomStyle,
-  snabbdomEvents
+const patch = initSnabbdom([
+  attributes,
+  classList,
+  events,
 ]);
 
 Option
@@ -64,18 +56,17 @@ function initPage(reader: Reader, chapter: ParsedChapter) {
 
     switch (key) {
       case 37: // left arrow
-        window.location.href = reader.getChapterUrl(chapter.slug, chapter.chapter - 1);
+        previousChapter(reader, chapter)();
         e.stopImmediatePropagation();
         break;
       case 39: // right arrow
-        window.location.href = reader.getChapterUrl(chapter.slug, chapter.chapter + 1);
+        nextChapter(reader, chapter)();
         e.stopImmediatePropagation();
         break;
     }
   }, true);
 
   const pages = chapter.pages.map(page => ({
-    loaded: false,
     failed: false,
     name: page,
     value: Option.empty<ParsedPage>()
@@ -83,19 +74,17 @@ function initPage(reader: Reader, chapter: ParsedChapter) {
 
   pages.forEach((page, idx) => {
     reader.fetchPage(chapter.slug, chapter.chapter, page.name).then(page => {
-      pages[idx].loaded = true;
       pages[idx].value = Option.wrap(page);
-      ui = patch(ui, renderChapter(chapter, pages));
+      ui = patch(ui, renderChapter(reader, chapter, pages));
     }, error => {
-      pages[idx].loaded = true;
       pages[idx].failed = true;
-      ui = patch(ui, renderChapter(chapter, pages));
+      ui = patch(ui, renderChapter(reader, chapter, pages));
     })
   });
 
   function render(storage: Storage) {
     container.then(elm => {
-      ui = patch(ui, renderChapter(chapter, pages));
+      ui = patch(ui, renderChapter(reader, chapter, pages));
     });
   }
 
@@ -103,18 +92,47 @@ function initPage(reader: Reader, chapter: ParsedChapter) {
   onStorageUpdated(render);
 }
 
+function previousChapter(reader: Reader, chapter: ParsedChapter) {
+  return function () {
+    window.location.href = reader.getChapterUrl(chapter.slug, chapter.chapter - 1);
+  }
+}
+
+function nextChapter(reader: Reader, chapter: ParsedChapter) {
+  return function () {
+    window.location.href = reader.getChapterUrl(chapter.slug, chapter.chapter + 1);
+  }
+}
+
 function renderEmpty() {
   return h('div', {}, []);
 }
 
-function renderPage(page: Page) {
-  return h('div.page', {}, [
-    h('img', {
-      attrs: { src: page.value.map(p => p.url).getOrElse('') }
-    }, [])
+function renderPage(page: Page): SnabbdomElement {
+  const content = [];
+
+  if (page.failed) {
+    content.push(h('span', {}, 'Failed to load page ' + page.name));
+  } else {
+    content.push(page.value.map(v => {
+      return h('img', {
+        attrs: { src: v.url }
+      }, [])
+    }).getOrElse(
+      h('span', {}, 'Loading...')
+    ));
+  }
+
+  return h('div.page', {}, content);
+}
+
+function renderFooter(reader: Reader, chapter: ParsedChapter): SnabbdomElement {
+  return h('div.footer', {}, [
+    h('button', { on: { click: previousChapter(reader, chapter) } }, 'Previous'),
+    h('button', { on: { click: nextChapter(reader, chapter) } }, 'Next'),
   ]);
 }
 
-function renderChapter(chapter: ParsedChapter, pages: Array<Page>) {
-  return h('div#mangamark.chapter', {}, pages.map(renderPage));
+function renderChapter(reader: Reader, chapter: ParsedChapter, pages: Array<Page>) {
+  return h('div#mangamark.chapter', {}, pages.map(renderPage).concat([ renderFooter(reader, chapter) ]));
 }

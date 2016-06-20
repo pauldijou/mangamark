@@ -46,12 +46,17 @@ export interface Storage {
 
 export type Html = string;
 
+export interface Chapter {
+  number: number,
+  name: string,
+}
+
 // The result of parsing an HTML page from a reader concerning the page describing a manga
 export interface ParsedManga {
   reader: ReaderId,
   name: string,
   slug: string,
-  total: number,
+  chapters: Array<Chapter>,
 }
 
 // The result of parsing an HTML page from a reader concerning one particular chapter

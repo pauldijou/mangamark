@@ -59,7 +59,7 @@ abstract class Reader {
   isValidParsedManga(parsedManga: ParsedManga): boolean {
     return parsedManga.name.length > 0
       && parsedManga.slug.length > 0
-      && parsedManga.total > 0;
+      && parsedManga.chapters.length > 0;
   }
 
   isValidParsedChapter(parsedChapter: ParsedChapter): boolean {

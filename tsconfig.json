@@ -5,7 +5,7 @@
     "target": "es5"
   },
   "files": [
-    "./typings/main.d.ts",
+    "./typings/index.d.ts",
     "./types/main.d.ts",
     "src/background.ts",
     "src/chrome.ts",
@@ -19,12 +19,13 @@
     "src/readers/Mangareader.ts",
     "src/readers/Reader.ts",
     "src/settings.ts",
+    "src/snabbdom.d.ts",
     "src/storage.ts",
     "src/types.ts",
     "src/utils.ts"
   ],
   "filesGlob": [
-    "./typings/main.d.ts",
+    "./typings/index.d.ts",
     "./types/main.d.ts",
     "src/**/*.ts"
   ],
