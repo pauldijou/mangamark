@@ -1,6 +1,6 @@
 import { init as initSnabbdom, h, attributes, classList, events, SnabbdomElement } from '../snabbdom';
 import { Storage, ParsedManga, ParsedChapter, ParsedPage } from '../types';
-import { sendDebug, onStorageUpdated, sendGetStorage } from '../messages';
+import { sendDebug, onStorageUpdated, sendGetStorage, sendChapterRead, sendMangaRead } from '../messages';
 import { all } from '../readers';
 import Reader from '../readers/Reader';
 import { Option, getManga } from '../utils';
@@ -29,14 +29,16 @@ function init(reader: Reader) {
   if (reader.isChapterUrl(document)) {
     reader.parseChapter(document).then(chapter => {
       if (reader.isValidParsedChapter(chapter)) {
-        sendDebug('Chapter read from', reader.id, JSON.stringify(chapter));
+        console.log('Chapter read from', reader.id, chapter);
         initPage(reader, chapter);
+        console.log('sendChapterRead');
+        sendChapterRead(chapter);
       }
     });
   } else if (reader.isMangaUrl(document)) {
     reader.parseManga(document).then(manga => {
       if (reader.isValidParsedManga(manga)) {
-        sendDebug('Manga read from', reader.id, JSON.stringify(manga));
+        console.log('Manga read from', reader.id, JSON.stringify(manga));
       }
     });
   }

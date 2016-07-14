@@ -33,7 +33,7 @@ export function updateManga(mangas: Array<Manga>, parsed: ParsedManga): Manga {
   return getManga(mangas, parsed.reader, parsed.slug)
     .map(function (manga) {
       return immUpdate(manga, {
-        totalChapters: parsed.chapters.length === 0 ? manga.totalChapters : parsed.chapters.length,
+        totalChapters: parsed.chapters.length === 0 ? manga.totalChapters : parsed.chapters[parsed.chapters.length - 1].number,
       });
     }).getOrElse({
       id: getNextId(mangas),
@@ -41,7 +41,7 @@ export function updateManga(mangas: Array<Manga>, parsed: ParsedManga): Manga {
       slug: parsed.slug,
       lastChapter: 0,
       reader: parsed.reader,
-      lastRead: 0,
+      lastRead: new Date(0).toISOString(),
       totalChapters: parsed.chapters.length,
     });
 }
@@ -54,16 +54,16 @@ export function updateChapter(mangas: Array<Manga>, parsed: ParsedChapter): Mang
       const lastChapter = Math.max(manga.lastChapter, parsed.chapter);
       return immUpdate(manga, {
         lastChapter: lastChapter,
-        lastRead: manga.lastChapter < lastChapter ? Date.now() : manga.lastRead,
-        totalChapters: parsed.chapters.length === 0 ? manga.totalChapters : parsed.chapters.length,
+        lastRead: manga.lastChapter < lastChapter ? new Date().toISOString() : manga.lastRead,
+        totalChapters: parsed.chapters.length === 0 ? manga.totalChapters : parsed.chapters[parsed.chapters.length - 1].number,
       });
     }).getOrElse({
       id: getNextId(mangas),
       name: parsed.name,
       slug: parsed.slug,
-      lastChapter: 0,
+      lastChapter: parsed.chapter,
       reader: parsed.reader,
-      lastRead: 0,
+      lastRead: new Date(0).toISOString(),
       totalChapters: parsed.chapters.length,
     });
 }

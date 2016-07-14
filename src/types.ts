@@ -15,7 +15,7 @@ export interface Manga {
   lastChapter: number,
   totalChapters: number,
   reader: ReaderId,
-  lastRead: number
+  lastRead: string
 }
 
 // The same as Manga but with smaller keys to save some bytes on online storage
@@ -26,7 +26,7 @@ export interface StoredManga {
   lc: number,
   tc: number,
   r: ReaderId,
-  lr: number
+  lr: string
 }
 
 // The full raw object stored and synched inside chrome.storage.sync

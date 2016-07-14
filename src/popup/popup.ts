@@ -33,7 +33,7 @@ function renderMenu(): SnabbdomElement {
 }
 
 function renderManga(manga: Manga): SnabbdomElement {
-  return h('li', {}, manga.name);
+  return h('li', {}, manga.name + ': ' + manga.lastChapter + '/' + manga.totalChapters);
 }
 
 function renderMangas(mangas: Array<Manga>): SnabbdomElement {

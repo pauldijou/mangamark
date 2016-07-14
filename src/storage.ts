@@ -1,8 +1,8 @@
 import { ReaderId, Settings, Manga, StoredManga, Storage, RawStorage, ParsedManga, ParsedChapter } from './types';
-import { fromStorage, toStorage } from './manga';
-import { sendStorageUpdated, onGetStorage } from './messages';
+import { isEqual, fromStorage, toStorage } from './manga';
+import { sendStorageUpdated, onGetStorage, onMangaRead, onChapterRead } from './messages';
 import { log } from './debug';
-import { immUpdate, Option, Some, None } from './utils';
+import { immUpdate, Option, Some, None, updateManga, updateChapter } from './utils';
 import { defaultSettings } from './settings';
 import { tryTo } from './chrome';
 
@@ -33,6 +33,10 @@ export function get(): Storage {
 // This seems like nothing but it's actually responding to any get_storage message
 // return the current storage
 onGetStorage(get);
+
+// Update data when reading stuff
+onMangaRead(manga => saveManga(updateManga(storage.mangas, manga)));
+onChapterRead(chapter => saveManga(updateChapter(storage.mangas, chapter)));
 
 // Refresh the whole storage
 // Will prevent two refresh to run at the same time
@@ -70,13 +74,25 @@ export function normalize(rawStorage: RawStorage): Storage {
   };
 }
 
+function shouldSaveManga(manga: Manga): boolean {
+  return Option
+    .wrap(storage)
+    .flatMap(s => Option.wrap(s[manga.id]))
+    .map(m => !isEqual(manga, m))
+    .getOrElse(true);
+}
+
 function saveManga(manga: Manga): void {
-  saveToStorage({ [manga.id]: toStorage(manga) });
+  if (shouldSaveManga(manga)) {
+    saveToStorage({ [manga.id]: toStorage(manga) });
+  }
 }
 
 function saveMangas(mangas: Array<Manga>): void {
   saveToStorage(mangas.reduce((patch, manga) => {
-    patch[manga.id] = toStorage(manga);
+    if (shouldSaveManga(manga)) {
+      patch[manga.id] = toStorage(manga);
+    }
     return patch;
   }, {}));
 }
@@ -86,6 +102,7 @@ function saveSettings(settings: Settings): void {
 }
 
 function saveToStorage(patch: Object): void {
+  log('saveToStorage', JSON.stringify(patch));
   tryTo(['storage', 'sync'], (api) => {
     api.set(patch);
   });

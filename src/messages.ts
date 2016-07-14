@@ -14,6 +14,7 @@ interface Message<T, V> {
 }
 
 function send<T, V>(type: MessageType, payload: T, response?: (V) => void): void {
+  console.log('sendMessage', type, payload);
   tryTo(['runtime', 'sendMessage'], (api) => {
     api({ type, payload }, response);
   });
@@ -22,8 +23,8 @@ function send<T, V>(type: MessageType, payload: T, response?: (V) => void): void
 function on<T, V>(type: MessageType, callback: (payload: T, sender: any, response: (V) => void) => void): void {
   tryTo(['runtime', 'onMessage'], (api) => {
     api.addListener(function (message: Message<T, V>, sender, sendResponse) {
-      console.log('onMessage', message);
       if (message.type === type) {
+        console.log('onMessage', message);
         callback(message.payload, sender, sendResponse);
       }
     });

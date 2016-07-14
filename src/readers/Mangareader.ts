@@ -107,8 +107,12 @@ export default class Mangareader extends Reader {
   initPage(doc: Document) {
     const element = doc.createElement('div');
 
-    ['#adtop', '#topchapter', '#bottomchapter', '#related', '#adfooter', '#adbottomright'].forEach(sel => {
+    ['#adtop', '#adfooter', '#adbottomright'].forEach(sel => {
       Option.wrap(doc.querySelector(sel)).map(e => e.remove());
+    });
+
+    ['#topchapter', '#bottomchapter', '#related'].forEach(sel => {
+      Option.wrap(doc.querySelector(sel)).map(e => (<HTMLElement>e).style.display = 'none');
     });
 
     const container = doc.querySelector('#container');
