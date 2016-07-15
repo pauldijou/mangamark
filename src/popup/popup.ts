@@ -1,6 +1,6 @@
 import { init as initSnabbdom, h, attributes, classList, events, SnabbdomElement } from '../snabbdom';
 
-import { onStorageUpdated, sendGetStorage } from '../messages';
+import { onStorageUpdated, sendGetStorage, sendRefreshMangas } from '../messages';
 import { Manga, Storage } from '../types';
 import { log } from '../debug';
 import { tryTo } from '../chrome';
@@ -8,27 +8,27 @@ import { tryTo } from '../chrome';
 const container = document.getElementById('mangamark-popup');
 let popup: SnabbdomElement;
 
-sendGetStorage((initStorage) => {
+sendGetStorage(init);
+
+function init(storage: Storage) {
   const patch = initSnabbdom([
     attributes,
     classList,
     events
   ]);
 
-  popup = patch(container, render(initStorage));
+  popup = patch(container, render(storage));
 
   onStorageUpdated(function (storage: Storage) {
-    log('onStorageUpdate', storage);
     popup = update(patch, popup, storage);
   });
-})
-
+}
 
 function renderMenu(): SnabbdomElement {
   return h('div.menu', {}, [
     h('h1', {}, 'MangaMark'),
     h('button', { type: 'button', on: { click: openOptions } }, 'Options'),
-    h('button', { type: 'button', on: { click: refresh } }, 'Refresh'),
+    h('button', { type: 'button', on: { click: refreshMangas } }, 'Refresh'),
   ]);
 }
 
@@ -67,6 +67,6 @@ function openOptions() {
   }
 }
 
-function refresh() {
-  log('Refresh');
+function refreshMangas() {
+  sendRefreshMangas();
 }

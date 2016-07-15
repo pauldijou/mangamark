@@ -68,6 +68,36 @@ export function updateChapter(mangas: Array<Manga>, parsed: ParsedChapter): Mang
     });
 }
 
+export function oneAtATime<A>(fn: () => Promise<A>, onStart = function () {}, onEnd = function () {}): () => Promise<A> {
+  var doingIt = false;
+  var oneMoreTime = false;
+
+  function doIt() {
+    doingIt = true;
+    oneMoreTime = false;
+    return fn().then(result => {
+      if (oneMoreTime) { return doIt(); }
+
+      doingIt = false;
+      onEnd();
+      return result;
+    }).catch(err => {
+      doingIt = false;
+      onEnd();
+      throw err;
+    });
+  }
+
+  return function () {
+    if (doingIt) {
+      oneMoreTime = true;
+    } else {
+      onStart();
+      return doIt();
+    }
+  }
+}
+
 export abstract class Option<T> {
   static wrap<T>(value: T): Option<T> {
     if (value === undefined || value === null) {

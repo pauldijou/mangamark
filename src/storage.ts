@@ -1,63 +1,61 @@
 import { ReaderId, Settings, Manga, StoredManga, Storage, RawStorage, ParsedManga, ParsedChapter } from './types';
 import { isEqual, fromStorage, toStorage } from './manga';
-import { sendStorageUpdated, onGetStorage, onMangaRead, onChapterRead } from './messages';
+import { sendStorageUpdated, onGetStorage, onRefreshStorage, onMangaRead, onChapterRead } from './messages';
 import { log } from './debug';
-import { immUpdate, Option, Some, None, updateManga, updateChapter } from './utils';
+import { immUpdate, oneAtATime, Option, Some, None, updateManga, updateChapter } from './utils';
 import { defaultSettings } from './settings';
 import { tryTo } from './chrome';
+
+console.log('STORAGE');
 
 if (!location || !location.href || location.href.indexOf('background') < 0) {
   console && console.warn('Storage has been imported. If this is not the background task, please consider using messaging with response to have only one storage instance.');
 }
 
-// This is a temporary solution to have flags,
-// we can do better
-let refreshing: boolean = false;
-let changedSinceLastRefresh: boolean = false;
+// Refresh the whole storage
+// Will prevent two refresh to run at the same time
+function doRefresh(): Promise<Storage> {
+  log('Refresh storage');
+  return new Promise(function (resolve, reject) {
+    tryTo(['storage', 'sync'], (api) => {
+      api.get(null, function (items: RawStorage) {
+        if (chrome.runtime.lastError) {
+          reject(chrome.runtime.lastError);
+        }
+
+        const newStorage = normalize(items);
+        setStorage(newStorage);
+        resolve(newStorage);
+      });
+    })
+  });
+}
+
+export const refresh: () => Promise<Storage> = oneAtATime(doRefresh);
 
 // The current storage (should be in sync with chrome.storage.sync)
-let storage: Storage;
+let storage: Promise<Storage> = refresh();
 
 // Override the current storage and trigger a message to all the extension
 function setStorage(newStorage: Storage) {
   log('Set storage', JSON.stringify(newStorage));
-  storage = newStorage;
-  sendStorageUpdated(storage);
+  storage = Promise.resolve(newStorage);
+  sendStorageUpdated(newStorage);
 }
 
 // Return the current storage (no kidding)
-export function get(): Storage {
+export function get(): Promise<Storage> {
   return storage;
 }
 
 // This seems like nothing but it's actually responding to any get_storage message
 // return the current storage
 onGetStorage(get);
+onRefreshStorage(refresh);
 
 // Update data when reading stuff
-onMangaRead(manga => saveManga(updateManga(storage.mangas, manga)));
-onChapterRead(chapter => saveManga(updateChapter(storage.mangas, chapter)));
-
-// Refresh the whole storage
-// Will prevent two refresh to run at the same time
-export function refresh(): Promise<Storage> {
-  log('Refresh storage');
-  changedSinceLastRefresh = false;
-  refreshing = true;
-  return new Promise(function (resolve, reject) {
-    tryTo(['storage', 'sync'], (api) => {
-      api.get(null, function (items: RawStorage) {
-        refreshing = false;
-        if (chrome.runtime.lastError) {
-          reject(chrome.runtime.lastError);
-        }
-
-        setStorage(normalize(items));
-        resolve(changedSinceLastRefresh ? refresh() : storage);
-      });
-    })
-  });
-}
+onMangaRead(manga => storage.then(store => saveManga(updateManga(store.mangas, manga))));
+onChapterRead(chapter => storage.then(store => saveManga(updateChapter(store.mangas, chapter))));
 
 // Convert from RawStorage (the real stuff online) to Storage (the better stuff used inside the extension)
 export function normalize(rawStorage: RawStorage): Storage {
@@ -112,16 +110,7 @@ tryTo(['storage', 'onChanged'], (api) => {
   api.addListener(function(changes, ns) {
     log('storage changed', ns, JSON.stringify(changes));
     if (ns === 'sync') {
-      // const patch = Object.keys(changes).reduce(function (acc, key) {
-      //   acc[key] = changes[key].newValue;
-      //   return acc;
-      // }, {});
-      // updateStorage(patch);
-      if (refreshing) {
-        changedSinceLastRefresh = true;
-      } else {
-        refresh();
-      }
+      refresh();
     }
   });
 })

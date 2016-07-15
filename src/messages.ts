@@ -5,8 +5,10 @@ type MessageType
   = 'debug'
   | 'storage_updated'
   | 'get_storage'
+  | 'refresh_storage'
   | 'chapter_read'
-  | 'manga_read';
+  | 'manga_read'
+  | 'refresh_mangas';
 
 interface Message<T, V> {
   type: MessageType,
@@ -14,19 +16,20 @@ interface Message<T, V> {
 }
 
 function send<T, V>(type: MessageType, payload: T, response?: (V) => void): void {
-  console.log('sendMessage', type, payload);
+  console.log('sendMessage', type, payload, response);
   tryTo(['runtime', 'sendMessage'], (api) => {
     api({ type, payload }, response);
   });
 }
 
-function on<T, V>(type: MessageType, callback: (payload: T, sender: any, response: (V) => void) => void): void {
+function on<T, V>(type: MessageType, callback: (payload: T, sender: any, response: (V) => void) => void, async = false): void {
   tryTo(['runtime', 'onMessage'], (api) => {
     api.addListener(function (message: Message<T, V>, sender, sendResponse) {
       if (message.type === type) {
-        console.log('onMessage', message);
+        console.log('onMessage', message.type, message.payload);
         callback(message.payload, sender, sendResponse);
       }
+      return async;
     });
   });
 }
@@ -43,10 +46,18 @@ export function sendGetStorage(response: (storage: Storage) => void): void {
   send('get_storage', null, response);
 }
 
-export function onGetStorage(getter: () => Storage): void {
+export function onGetStorage(getter: () => Promise<Storage>): void {
   on('get_storage', (payload, sender, response) => {
-    response(getter());
-  });
+    getter().then(response);
+  }, true);
+}
+
+export function sendRefreshStorage() {
+  send('refresh_storage', null);
+}
+
+export function onRefreshStorage(refresher) {
+  on('refresh_storage', refresher);
 }
 
 export function sendMangaRead(manga: ParsedManga): void {
@@ -71,4 +82,12 @@ export function sendDebug(...values): void {
 
 export function onDebug(callback) {
   on('debug', callback);
+}
+
+export function sendRefreshMangas(): void {
+  send('refresh_mangas', null);
+}
+
+export function onRefreshMangas(callback) {
+  on('refresh_mangas', callback);
 }
