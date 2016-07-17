@@ -1,3 +1,4 @@
+import { parse } from 'url';
 import { Html, Storage, ReaderId, Manga, ParsedManga, ParsedChapter } from './types';
 
 export function assign<T>(src: T, patch: Object): T {
@@ -8,10 +9,33 @@ export function immUpdate<T>(src: T, patch: Object): T {
   return (<any>Object).assign({}, src, patch);
 }
 
+export function urlToLocation(url: string): Location {
+  const loc = parse(url);
+  return {
+    href: loc.href,
+    protocol: loc.protocol,
+    host: loc.host,
+    hostname: loc.hostname,
+    port: loc.port,
+    pathname: loc.pathname,
+    search: loc.search,
+    hash: loc.hash || '',
+    origin: '',
+    assign: function (url: string): void {},
+    reload: function (forcedReload?: boolean): void {},
+    replace: function (url: string): void {},
+    toString: function (): string { return url; }
+  };
+}
+
 export function htmlToDocument(html: Html): Document {
   const doc = document.implementation.createHTMLDocument('');
   doc.body.innerHTML = html;
   return doc;
+}
+
+export function isBackground() {
+  return location && location.href && location.href.indexOf('background') > 0;
 }
 
 function getNextId(mangas: Array<Manga>): number {

@@ -1,5 +1,9 @@
-export function log(...values: Array<any>): void {
-  console.log.apply(console, values);
+export function log(prefix: string, at: string, ...values: Array<any>): void {
+  console.log(at, prefix, ...values);
+}
+
+export function debug(...values: Array<any>): void {
+  // log(...values);
   if (chrome && chrome.notifications) {
     chrome.notifications.create({
       type: 'basic',

@@ -18,7 +18,7 @@
   "browser_action": {
     "default_icon": "icons/icon19.png",
     "default_popup": "popup.html",
-    "default_title": "Manga Bookmarker"
+    "default_title": "__MSG_name__"
   },
 
   "background": {
@@ -39,7 +39,7 @@
   ],
 
   "content_scripts": [{
-    "matches": ["http://*/**"],
+    "matches": ["http://mangareader.net/**", "http://www.mangareader.net/**"],
     "js": ["build/contentScript.js"],
     "css": ["build/content.css"]
   }]

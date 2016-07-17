@@ -1,10 +1,13 @@
 import Reader from './Reader';
 import { Option } from '../utils';
+import { ReaderId } from '../types';
+
+const id: ReaderId = 'mangareader';
 
 export default class Mangareader extends Reader {
   constructor() {
     super();
-    this.id = 'mangareader';
+    this.id = id;
     this.baseUrl = 'http://www.mangareader.net';
   }
 
@@ -16,8 +19,10 @@ export default class Mangareader extends Reader {
     return doc.getElementById('topchapter') !== null;
   }
 
-  parseManga(doc: Document) {
-    const [a, slug, ...rest] = doc.location.pathname.split('/');
+  parseManga(doc: Document, location?: Location) {
+    if (!location) { location = doc.location; }
+
+    const [a, slug, ...rest] = location.pathname.split('/');
 
     const name = Option.wrap(doc.querySelector('h2.aname'))
       .map(h2 => h2.textContent)
@@ -36,10 +41,12 @@ export default class Mangareader extends Reader {
       })))
       .getOrElse([]);
 
-    return Promise.resolve({ reader: this.id, name, slug, chapters });
+    return Promise.resolve({ reader: id, name, slug, chapters });
   }
 
-  parseChapter(doc: Document) {
+  parseChapter(doc: Document, location?: Location) {
+    if (!location) { location = doc.location; }
+
     return new Promise((resolve, reject) => {
       const menu = doc.getElementById('chapterMenu');
 
@@ -65,7 +72,7 @@ export default class Mangareader extends Reader {
 
       observer.observe(menu, { childList: true });
     }).then(chapters => {
-      const [a, slug, chapter, ...rest] = doc.location.pathname.split('/');
+      const [a, slug, chapter, ...rest] = location.pathname.split('/');
 
       const name = Option.wrap(doc.querySelector('h2.c2'))
         .map(h2 => h2.textContent)
@@ -83,11 +90,11 @@ export default class Mangareader extends Reader {
         })
         .getOrElse([]);
 
-      return { reader: this.id, chapters, name, slug, chapter: parseInt(chapter, 10), pages };
+      return { reader: id, chapters, name, slug, chapter: parseInt(chapter, 10), pages };
     });
   }
 
-  parsePage(doc: Document) {
+  parsePage(doc: Document, location?: Location) {
     const isLarge = Option.wrap(doc.getElementById('zoomer'))
       .map(zoomer => zoomer.textContent)
       .map(txt => txt.indexOf('Large') > 0)
@@ -104,7 +111,7 @@ export default class Mangareader extends Reader {
     return Promise.resolve(img.getOrElse({ url: '', width: 0, height: 0, isLarge }));
   }
 
-  initPage(doc: Document) {
+  initChapter(doc: Document): Promise<HTMLElement> {
     const element = doc.createElement('div');
 
     ['#adtop', '#adfooter', '#adbottomright'].forEach(sel => {

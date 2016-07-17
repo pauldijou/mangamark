@@ -8,7 +8,7 @@ interface SnabbdomModule {
 
 interface Snabbdom {
   h(sel: string, data: Object, children: string | Array<SnabbdomElement>): SnabbdomElement;
-  init(modules: Array<SnabbdomModule>): any;
+  init(modules: Array<SnabbdomModule>): (a: SnabbdomElement | HTMLElement, b: SnabbdomElement) => SnabbdomElement;
 
   attributes: SnabbdomModule;
   props: SnabbdomModule;
@@ -18,8 +18,8 @@ interface Snabbdom {
 }
 
 declare let snabbdom: Snabbdom
-export var init: any;
-export var h: any;
+export var init: (modules: Array<SnabbdomModule>) => (a: SnabbdomElement | HTMLElement, b: SnabbdomElement) => SnabbdomElement;
+export var h: (sel: string, data: Object, children: string | Array<SnabbdomElement>) => SnabbdomElement;
 export var attributes: SnabbdomModule;
 export var props: SnabbdomModule;
 export var classList: SnabbdomModule;

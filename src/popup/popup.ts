@@ -1,16 +1,17 @@
 import { init as initSnabbdom, h, attributes, classList, events, SnabbdomElement } from '../snabbdom';
-
 import { onStorageUpdated, sendGetStorage, sendRefreshMangas } from '../messages';
 import { Manga, Storage } from '../types';
-import { log } from '../debug';
 import { tryTo } from '../chrome';
+import { createLogger } from '../logger';
 
+const logger = createLogger('popup', '#2c3e50');
 const container = document.getElementById('mangamark-popup');
 let popup: SnabbdomElement;
 
 sendGetStorage(init);
 
 function init(storage: Storage) {
+  logger.info('init', storage);
   const patch = initSnabbdom([
     attributes,
     classList,
@@ -45,6 +46,7 @@ function renderMangas(mangas: Array<Manga>): SnabbdomElement {
 }
 
 function render(storage: Storage): SnabbdomElement {
+  logger.info('render', storage);
   return h('div#mangamark-popup', {}, [
     renderMenu(),
     renderMangas(storage.mangas)

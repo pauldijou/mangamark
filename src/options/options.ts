@@ -1,3 +1,7 @@
+import { createLogger } from '../logger';
+
+const logger = createLogger('options', '#1abc9c');
+
 // // Saves options to chrome.storage.sync.
 // function save() {
 //   // var color = document.getElementById('color').value;

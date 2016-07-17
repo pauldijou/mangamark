@@ -1,9 +1,21 @@
 import { Storage, ParsedManga, ParsedChapter } from './types';
 import { tryTo } from './chrome';
+import { createLogger, log as doLog} from './logger';
+import { isBackground } from './utils';
+
+const prefix = 'messages';
+const color = '#e67e22';
+const logger = !isBackground() ?
+  createLogger(prefix, color) :
+  {
+    info: function (...values) { doLog({ severity: 'info', prefix, color, at: new Date().toISOString(), values }) },
+    groupCollapsed: function (...values) { doLog({ severity: 'groupCollapsed', prefix, color, at: new Date().toISOString(), values }); },
+    groupEnd: function (...values) { doLog({ severity: 'groupEnd', prefix, color, at: new Date().toISOString(), values }); }
+  };
+
 
 type MessageType
-  = 'debug'
-  | 'storage_updated'
+  = 'storage_updated'
   | 'get_storage'
   | 'refresh_storage'
   | 'chapter_read'
@@ -16,7 +28,7 @@ interface Message<T, V> {
 }
 
 function send<T, V>(type: MessageType, payload: T, response?: (V) => void): void {
-  console.log('sendMessage', type, payload, response);
+  logger.info('send', type, response ? 'withResponse' : 'withouResponse', payload);
   tryTo(['runtime', 'sendMessage'], (api) => {
     api({ type, payload }, response);
   });
@@ -26,7 +38,11 @@ function on<T, V>(type: MessageType, callback: (payload: T, sender: any, respons
   tryTo(['runtime', 'onMessage'], (api) => {
     api.addListener(function (message: Message<T, V>, sender, sendResponse) {
       if (message.type === type) {
-        console.log('onMessage', message.type, message.payload);
+        logger.groupCollapsed('on', message.type, async ? 'async' : 'non-async')
+        logger.info('payload', message.payload);
+        logger.info('sender', sender);
+        logger.info('response', sendResponse);
+        logger.groupEnd();
         callback(message.payload, sender, sendResponse);
       }
       return async;
@@ -74,14 +90,6 @@ export function sendChapterRead(chapter: ParsedChapter): void {
 
 export function onChapterRead(callback: (chapter: ParsedChapter) => void): void {
   on('chapter_read', callback)
-}
-
-export function sendDebug(...values): void {
-  send('debug', values);
-}
-
-export function onDebug(callback) {
-  on('debug', callback);
 }
 
 export function sendRefreshMangas(): void {

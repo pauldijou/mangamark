@@ -1,5 +1,5 @@
 import { Manga, ReaderId, ParsedManga, ParsedChapter, ParsedPage } from '../types';
-import { assign, htmlToDocument } from '../utils';
+import { assign, htmlToDocument, urlToLocation } from '../utils';
 
 abstract class Reader {
   id: ReaderId;
@@ -28,15 +28,15 @@ abstract class Reader {
     return this.getChapterUrl(manga.slug, manga.lastChapter);
   }
 
-  abstract parseManga(doc: Document): Promise<ParsedManga>;
-  abstract parseChapter(doc: Document): Promise<ParsedChapter>;
-  abstract parsePage(doc: Document): Promise<ParsedPage>;
+  abstract parseManga(doc: Document, location?: Location): Promise<ParsedManga>;
+  abstract parseChapter(doc: Document, location?: Location): Promise<ParsedChapter>;
+  abstract parsePage(doc: Document, location?: Location): Promise<ParsedPage>;
 
-  fetchAndParse<A>(url: string, parser: (doc: Document) => Promise<A>): Promise<A> {
+  fetchAndParse<A>(url: string, parser: (doc: Document, location?: Location) => Promise<A>): Promise<A> {
     return fetch(url)
       .then(response => response.text())
       .then(htmlToDocument)
-      .then(parser);
+      .then(doc => parser(doc, urlToLocation(url)));
   }
 
   fetchManga(slug: string): Promise<ParsedManga> {
@@ -68,7 +68,9 @@ abstract class Reader {
       && parsedChapter.pages.length > 0;
   }
 
-  abstract initPage(doc: Document): Promise<Element>;
+  // Init the chapter page, hiding unwanted elements
+  // and creating the container for rendering mangamark stuff (returns it in the Promise)
+  abstract initChapter(doc: Document): Promise<HTMLElement>;
 }
 
 export default Reader;

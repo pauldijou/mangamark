@@ -1,21 +1,23 @@
+import chalk = require('chalk');
 import { ReaderId, Settings, Manga, StoredManga, Storage, RawStorage, ParsedManga, ParsedChapter } from './types';
 import { isEqual, fromStorage, toStorage } from './manga';
 import { sendStorageUpdated, onGetStorage, onRefreshStorage, onMangaRead, onChapterRead } from './messages';
-import { log } from './debug';
-import { immUpdate, oneAtATime, Option, Some, None, updateManga, updateChapter } from './utils';
+import { immUpdate, isBackground, oneAtATime, Option, Some, None, updateManga, updateChapter, getManga } from './utils';
 import { defaultSettings } from './settings';
 import { tryTo } from './chrome';
+import { createLogger } from './connect';
 
-console.log('STORAGE');
+const logger = createLogger('storage', '#27ae60');
+logger.info('init');
 
-if (!location || !location.href || location.href.indexOf('background') < 0) {
-  console && console.warn('Storage has been imported. If this is not the background task, please consider using messaging with response to have only one storage instance.');
+if (!isBackground()) {
+  logger.warn('Storage has been imported. If this is not the background task, please consider using messaging with response to have only one storage instance.');
 }
 
 // Refresh the whole storage
 // Will prevent two refresh to run at the same time
 function doRefresh(): Promise<Storage> {
-  log('Refresh storage');
+  logger.info('Refresh storage');
   return new Promise(function (resolve, reject) {
     tryTo(['storage', 'sync'], (api) => {
       api.get(null, function (items: RawStorage) {
@@ -38,7 +40,7 @@ let storage: Promise<Storage> = refresh();
 
 // Override the current storage and trigger a message to all the extension
 function setStorage(newStorage: Storage) {
-  log('Set storage', JSON.stringify(newStorage));
+  logger.info('Set storage', newStorage);
   storage = Promise.resolve(newStorage);
   sendStorageUpdated(newStorage);
 }
@@ -72,27 +74,29 @@ export function normalize(rawStorage: RawStorage): Storage {
   };
 }
 
-function shouldSaveManga(manga: Manga): boolean {
-  return Option
-    .wrap(storage)
-    .flatMap(s => Option.wrap(s[manga.id]))
+function shouldSaveManga(store: Storage, manga: Manga): boolean {
+  return getManga(store.mangas, manga.reader, manga.slug)
     .map(m => !isEqual(manga, m))
     .getOrElse(true);
 }
 
-function saveManga(manga: Manga): void {
-  if (shouldSaveManga(manga)) {
-    saveToStorage({ [manga.id]: toStorage(manga) });
-  }
+export function saveManga(manga: Manga): void {
+  get().then(s => {
+    if (shouldSaveManga(s, manga)) {
+      saveToStorage({ [manga.id]: toStorage(manga) });
+    }
+  });
 }
 
-function saveMangas(mangas: Array<Manga>): void {
-  saveToStorage(mangas.reduce((patch, manga) => {
-    if (shouldSaveManga(manga)) {
-      patch[manga.id] = toStorage(manga);
-    }
-    return patch;
-  }, {}));
+export function saveMangas(mangas: Array<Manga>): void {
+  get().then(s => {
+    saveToStorage(mangas.reduce((patch, manga) => {
+      if (shouldSaveManga(s, manga)) {
+        patch[manga.id] = toStorage(manga);
+      }
+      return patch;
+    }, {}));
+  });
 }
 
 function saveSettings(settings: Settings): void {
@@ -100,7 +104,7 @@ function saveSettings(settings: Settings): void {
 }
 
 function saveToStorage(patch: Object): void {
-  log('saveToStorage', JSON.stringify(patch));
+  logger.info('saveToStorage', patch);
   tryTo(['storage', 'sync'], (api) => {
     api.set(patch);
   });
@@ -108,7 +112,7 @@ function saveToStorage(patch: Object): void {
 
 tryTo(['storage', 'onChanged'], (api) => {
   api.addListener(function(changes, ns) {
-    log('storage changed', ns, JSON.stringify(changes));
+    logger.info('storage changed', ns, JSON.stringify(changes));
     if (ns === 'sync') {
       refresh();
     }

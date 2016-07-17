@@ -2,7 +2,8 @@
   "name": "mangamark",
   "version": "0.0.1",
   "dependencies": {
-    "snabbdom": "^0.4.2"
+    "snabbdom": "^0.4.2",
+    "url": "^0.11.0"
   },
   "devDependencies": {
     "css-loader": "^0.23.1",
@@ -20,6 +21,8 @@
   "scripts": {
     "init": "npm install && npm run typings",
     "typings": "typings install",
+    "tSearch": "typings search --name",
+    "tInstall": "typings install --save --global",
     "build": "webpack --config webpack.config.js",
     "dev": "webpack --config webpack.config.js --watch"
   }
