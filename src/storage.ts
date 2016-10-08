@@ -1,5 +1,4 @@
-import chalk = require('chalk');
-import { ReaderId, Settings, Manga, StoredManga, Storage, RawStorage, ParsedManga, ParsedChapter } from './types';
+import { ReaderId, Settings, Manga, SyncManga, Storage, SyncStorage, ParsedManga, ParsedChapter } from './types';
 import { isEqual, fromStorage, toStorage } from './manga';
 import { sendStorageUpdated, onGetStorage, onRefreshStorage, onMangaRead, onChapterRead } from './messages';
 import { immUpdate, isBackground, oneAtATime, Option, Some, None, updateManga, updateChapter, getManga } from './utils';
@@ -14,26 +13,54 @@ if (!isBackground()) {
   logger.warn('Storage has been imported. If this is not the background task, please consider using messaging with response to have only one storage instance.');
 }
 
-// Refresh the whole storage
-// Will prevent two refresh to run at the same time
-function doRefresh(): Promise<Storage> {
-  logger.info('Refresh storage');
+function getKey(manga: { reader: ReaderId, slug: string }): string {
+  return manga.reader + '_' + manga.slug;
+}
+
+function refreshSync(): Promise<SyncStorage> {
+  logger.info('Refresh sync storage');
   return new Promise(function (resolve, reject) {
     tryTo(['storage', 'sync'], (api) => {
-      api.get(null, function (items: RawStorage) {
+      api.get(null, function (items: SyncStorage) {
         if (chrome.runtime.lastError) {
           reject(chrome.runtime.lastError);
         }
-
-        const newStorage = normalize(items);
-        setStorage(newStorage);
-        resolve(newStorage);
+        resolve(normalize(items));
       });
     })
   });
 }
 
-export const refresh: () => Promise<Storage> = oneAtATime(doRefresh);
+function refreshLocal(): Promise<Storage> {
+  logger.info('Refresh local storage');
+  return new Promise(function (resolve, reject) {
+    tryTo(['storage', 'local'], (api) => {
+      api.get(null, function (localStorage: Storage) {
+        if (chrome.runtime.lastError) {
+          reject(chrome.runtime.lastError);
+        }
+
+        sendStorageUpdated(localStorage);
+        resolve(localStorage);
+      });
+    })
+  });
+}
+
+function refreshAll(): Promise<Storage> {
+  logger.info('Refresh all storages');
+  return refreshSync()
+    .then(function (sync) {
+      return refreshLocal().then(function (local) {
+        return { local, sync };
+      });
+    })
+    .then(function (both: { local: Storage, sync: SyncStorage }) {
+      return mergeSyncToStorage(both.sync, both.local);
+    });
+}
+
+export const refresh: () => Promise<Storage> = oneAtATime(refreshAll);
 
 // The current storage (should be in sync with chrome.storage.sync)
 let storage: Promise<Storage> = refresh();
@@ -59,17 +86,28 @@ onRefreshStorage(refresh);
 onMangaRead(manga => storage.then(store => saveManga(updateManga(store.mangas, manga))));
 onChapterRead(chapter => storage.then(store => saveManga(updateChapter(store.mangas, chapter))));
 
-// Convert from RawStorage (the real stuff online) to Storage (the better stuff used inside the extension)
-export function normalize(rawStorage: RawStorage): Storage {
-  const mangas: Array<Manga> = Object.keys(rawStorage)
+// Convert from SyncStorage (the real stuff online) to Storage (the better stuff used inside the extension)
+interface NormalizedSyncMangas {
+  [propName: string]: SyncManga
+}
+
+interface NormalizedSyncStorage {
+  settings: Settings,
+  mangas: NormalizedSyncMangas
+}
+
+export function normalize(syncStorage: SyncStorage): { settings: Settings, mangas: NormalizedSyncMangas } {
+  const mangas = Object.keys(syncStorage)
     .map(key => parseInt(key, 10))
     .filter((<any>Number).isFinite)
-    .map(key => rawStorage[key])
-    .map(fromStorage);
+    .reduce((mangas, key) => {
+      const manga = syncStorage[key];
+      mangas[getKey(manga)] = manga;
+      return mangas;
+    }, {});
 
   return {
-    version: rawStorage.version || 0,
-    settings: immUpdate(defaultSettings, rawStorage.settings),
+    settings: immUpdate(defaultSettings, syncStorage.settings),
     mangas
   };
 }
@@ -83,16 +121,16 @@ function shouldSaveManga(store: Storage, manga: Manga): boolean {
 export function saveManga(manga: Manga): void {
   get().then(s => {
     if (shouldSaveManga(s, manga)) {
-      saveToStorage({ [manga.id]: toStorage(manga) });
+      saveToStorage('sync', { [getKey(manga)]: toStorage(manga) });
     }
   });
 }
 
 export function saveMangas(mangas: Array<Manga>): void {
   get().then(s => {
-    saveToStorage(mangas.reduce((patch, manga) => {
+    saveToStorage('sync', mangas.reduce((patch, manga) => {
       if (shouldSaveManga(s, manga)) {
-        patch[manga.id] = toStorage(manga);
+        patch[getKey(manga)] = toStorage(manga);
       }
       return patch;
     }, {}));
@@ -100,21 +138,37 @@ export function saveMangas(mangas: Array<Manga>): void {
 }
 
 function saveSettings(settings: Settings): void {
-  saveToStorage({ settings: settings });
+  saveToStorage('sync', { settings: settings });
 }
 
-function saveToStorage(patch: Object): void {
-  logger.info('saveToStorage', patch);
-  tryTo(['storage', 'sync'], (api) => {
+function saveToStorage(ns: 'sync' | 'local', patch: Object): void {
+  logger.info('saveToStorage', ns, patch);
+  tryTo(['storage', ns], (api) => {
     api.set(patch);
+  });
+}
+
+function mergeSyncToStorage(syncStorage: SyncStorage, storage: Storage): Storage {
+  const nSyncStorage = normalize(syncStorage);
+  return immUpdate(storage, {
+    settings: nSyncStorage.settings,
+    mangas: storage.mangas.map(manga => {
+      const syncManga = nSyncStorage.mangas[getKey(manga)];
+      if (syncManga !== undefined) {
+        return immUpdate(manga, syncManga);
+      }
+      return manga;
+    })
   });
 }
 
 tryTo(['storage', 'onChanged'], (api) => {
   api.addListener(function(changes, ns) {
-    logger.info('storage changed', ns, JSON.stringify(changes));
+    logger.info('storage changed', ns, changes);
     if (ns === 'sync') {
-      refresh();
+      refreshAll();
+    } else if (ns === 'local') {
+      refreshLocal();
     }
   });
 })

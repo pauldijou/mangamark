@@ -6,50 +6,45 @@ export interface Settings {
   interval: number
 }
 
-// All informations we save about a give manga
-// The id is just a random number to differenciate them
-export interface Manga {
-  id: number,
+export interface Chapter {
   name: string,
-  slug: string,
-  lastChapter: number,
-  totalChapters: number,
+  slug: string
+}
+
+// All informations we save about a given manga
+export interface Manga {
   reader: ReaderId,
-  lastRead: string
+  slug: string,
+  name: string,
+  chapters: Chapter[],
+  lastChapter: Chapter,
+  lastRead: string,
+  collapsed: boolean
 }
 
 // The same as Manga but with smaller keys to save some bytes on online storage
-export interface StoredManga {
-  i: number,
-  n: string,
-  s: string,
-  lc: number,
-  tc: number,
-  r: ReaderId,
-  lr: string
+export interface SyncManga {
+  reader: ReaderId, // 20
+  slug: string, // 100
+  lastChapter: string, // 15
+  lastRead: string, // 32
+  collapsed: boolean // 14
 }
 
 // The full raw object stored and synched inside chrome.storage.sync
-export interface RawStorage {
-  version: number,
+export interface SyncStorage {
   settings: Settings,
-  [propName: number]: StoredManga
+  [propName: number]: SyncManga
 }
 
 // The storage representation used inside the extension,
-// it's a normalized version of RawStorage
+// it's a normalized version of SyncStorage
 export interface Storage {
-  version: number,
   settings: Settings,
   mangas: Array<Manga>
 }
 
 export type Html = string;
-
-export interface Chapter {
-  number: number,
-  name: string,
-}
 
 // The result of parsing an HTML page from a reader concerning the page describing a manga
 export interface ParsedManga {
@@ -60,8 +55,10 @@ export interface ParsedManga {
 }
 
 // The result of parsing an HTML page from a reader concerning one particular chapter
-export interface ParsedChapter extends ParsedManga {
-  chapter: number,
+export interface ParsedChapter {
+  name: string,
+  slug: string,
+  manga: ParsedManga,
   pages: Array<string>
 }
 

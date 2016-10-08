@@ -34,7 +34,16 @@ function renderMenu(): SnabbdomElement {
 }
 
 function renderManga(manga: Manga): SnabbdomElement {
-  return h('li', {}, manga.name + ': ' + manga.lastChapter + '/' + manga.totalChapters);
+  const options = [];
+  // for (let i = 0; i < manga.totalChapters) {}
+
+  return h('tr', {}, [
+    h('td', {}, manga.name),
+    h('td', {}, manga.lastChapter + '/' + manga.chapters.length),
+    h('td', {}, [
+      h('select', {}, [])
+    ]),
+  ]);
 }
 
 function renderMangas(mangas: Array<Manga>): SnabbdomElement {
@@ -42,7 +51,7 @@ function renderMangas(mangas: Array<Manga>): SnabbdomElement {
     return h('div.empty', {}, 'You don\'t have any manga yet');
   }
 
-  return h('ul', {}, mangas.map(renderManga));
+  return h('table', {}, mangas.map(renderManga));
 }
 
 function render(storage: Storage): SnabbdomElement {

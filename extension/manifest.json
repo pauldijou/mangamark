@@ -33,6 +33,7 @@
 
   "permissions": [
     "storage",
+    "unlimitedStorage",
     "notifications",
     "http://mangareader.net/",
     "http://www.mangareader.net/"
