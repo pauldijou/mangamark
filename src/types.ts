@@ -8,7 +8,8 @@ export interface Settings {
 
 export interface Chapter {
   name: string,
-  slug: string
+  slug: string,
+  number: number
 }
 
 // All informations we save about a given manga
@@ -22,7 +23,8 @@ export interface Manga {
   collapsed: boolean
 }
 
-// The same as Manga but with smaller keys to save some bytes on online storage
+// A subtset of manga we want to sync accros devices
+// but cannot be too big (no chapter list for example)
 export interface SyncManga {
   reader: ReaderId, // 20
   slug: string, // 100
@@ -32,9 +34,10 @@ export interface SyncManga {
 }
 
 // The full raw object stored and synched inside chrome.storage.sync
+//
 export interface SyncStorage {
   settings: Settings,
-  [propName: number]: SyncManga
+  [propName: string]: any
 }
 
 // The storage representation used inside the extension,
@@ -58,7 +61,11 @@ export interface ParsedManga {
 export interface ParsedChapter {
   name: string,
   slug: string,
-  manga: ParsedManga,
+  number: number,
+  manga: {
+    reader: ReaderId,
+    slug: string
+  },
   pages: Array<string>
 }
 

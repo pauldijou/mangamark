@@ -78,13 +78,13 @@ const fetchPage = (reader, chapter, pages) => (page) => {
 
 function previousChapter(reader: Reader, chapter: ParsedChapter) {
   return function () {
-    window.location.href = reader.getChapterUrl(chapter.slug, chapter.chapter - 1);
+    window.location.href = reader.getChapterUrl(chapter.slug, chapter.number - 1);
   }
 }
 
 function nextChapter(reader: Reader, chapter: ParsedChapter) {
   return function () {
-    window.location.href = reader.getChapterUrl(chapter.slug, chapter.chapter + 1);
+    window.location.href = reader.getChapterUrl(chapter.slug, chapter.number + 1);
   }
 }
 
@@ -120,7 +120,8 @@ function renderSelectChapter(reader: Reader, chapter: ParsedChapter): SnabbdomEl
   return h(
     'select',
     { on: { change: goToChapter(reader, chapter) } },
-    chapter.chapters.map(chap => h('option', { attrs: { value: chap.number, selected: chap.number === chapter.chapter } }, chap.name))
+    []
+    // chapter.chapters.map(chap => h('option', { attrs: { value: chap.number, selected: chap.number === chapter.chapter } }, chap.name))
   );
 }
 

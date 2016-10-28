@@ -1,5 +1,5 @@
 import { parse } from 'url';
-import { Html, Storage, ReaderId, Manga, ParsedManga, ParsedChapter } from './types';
+import { Html, Storage, ReaderId, Manga, Chapter, ParsedManga, ParsedChapter } from './types';
 
 export function assign<T>(src: T, patch: Object): T {
   return (<any>Object).assign(src, patch);
@@ -38,10 +38,6 @@ export function isBackground() {
   return location && location.href && location.href.indexOf('background') > 0;
 }
 
-function getNextId(mangas: Array<Manga>): number {
-  return 1 + mangas.reduce((id, manga) => Math.max(id, manga.id), 0)
-}
-
 // Return a Manga from king of its primary key
 // - the reader where it is read
 // - its slug, the unique normalized url portion with its name
@@ -57,38 +53,43 @@ export function updateManga(mangas: Array<Manga>, parsed: ParsedManga): Manga {
   return getManga(mangas, parsed.reader, parsed.slug)
     .map(function (manga) {
       return immUpdate(manga, {
-        totalChapters: parsed.chapters.length === 0 ? manga.totalChapters : parsed.chapters[parsed.chapters.length - 1].number,
+        chapters: parsed.chapters.length === 0 ? manga.chapters : parsed.chapters,
       });
     }).getOrElse({
-      id: getNextId(mangas),
       name: parsed.name,
       slug: parsed.slug,
-      lastChapter: 0,
+      lastChapter: parsed.chapters[parsed.chapters.length - 1],
       reader: parsed.reader,
       lastRead: new Date(0).toISOString(),
-      totalChapters: parsed.chapters.length,
+      chapters: parsed.chapters,
+      collapsed: false,
     });
 }
 
 // Same as updateManga but with a chapter number which will be used only if greater than the last chapter
 // !! Do not save it in the online storage !!
 export function updateChapter(mangas: Array<Manga>, parsed: ParsedChapter): Manga {
-  return getManga(mangas, parsed.reader, parsed.slug)
+  const chapter: Chapter = { name: parsed.name, slug: parsed.slug, number: parsed.number };
+
+  return getManga(mangas, parsed.manga.reader, parsed.manga.slug)
     .map(function (manga) {
-      const lastChapter = Math.max(manga.lastChapter, parsed.chapter);
+      const hasChapter: boolean = manga.chapters.reduce((res, chap) => {
+        return res || (chap.slug === chapter.slug);
+      }, false);
+      const lastChapter: Chapter = manga.lastChapter.number < chapter.number ? chapter : manga.lastChapter;
+
       return immUpdate(manga, {
         lastChapter: lastChapter,
-        lastRead: manga.lastChapter < lastChapter ? new Date().toISOString() : manga.lastRead,
-        totalChapters: parsed.chapters.length === 0 ? manga.totalChapters : parsed.chapters[parsed.chapters.length - 1].number,
+        lastRead: manga.lastChapter === chapter ? new Date().toISOString() : manga.lastRead,
       });
     }).getOrElse({
-      id: getNextId(mangas),
       name: parsed.name,
       slug: parsed.slug,
-      lastChapter: parsed.chapter,
-      reader: parsed.reader,
+      lastChapter: chapter,
+      reader: parsed.manga.reader,
       lastRead: new Date(0).toISOString(),
-      totalChapters: parsed.chapters.length,
+      chapters: [ chapter ],
+      collapsed: false,
     });
 }
 

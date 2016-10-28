@@ -1,3 +1,4 @@
+// import { Promise } from 'es6-shim';
 import { ReaderId, Settings, Manga, SyncManga, Storage, SyncStorage, ParsedManga, ParsedChapter } from './types';
 import { isEqual, fromStorage, toStorage } from './manga';
 import { sendStorageUpdated, onGetStorage, onRefreshStorage, onMangaRead, onChapterRead } from './messages';

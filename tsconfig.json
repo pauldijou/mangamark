@@ -2,32 +2,16 @@
   "compilerOptions": {
     "outDir": "./build/",
     "sourceMap": true,
-    "target": "es5"
+    "strictNullChecks": false,
+    "target": "es5",
+    "lib": [
+      "scripthost",
+      "dom",
+      "es5",
+      "es2015"
+    ]
   },
-  "files": [
-    "./typings/index.d.ts",
-    "./types/main.d.ts",
-    "src/background.ts",
-    "src/chrome.ts",
-    "src/connect.ts",
-    "src/contentScript/content-script.ts",
-    "src/debug.ts",
-    "src/logger.ts",
-    "src/manga.ts",
-    "src/messages.ts",
-    "src/options/options.ts",
-    "src/popup/popup.ts",
-    "src/readers/index.ts",
-    "src/readers/Mangareader.ts",
-    "src/readers/Reader.ts",
-    "src/settings.ts",
-    "src/snabbdom.d.ts",
-    "src/storage.ts",
-    "src/types.ts",
-    "src/utils.ts"
-  ],
-  "filesGlob": [
-    "./typings/index.d.ts",
+  "include": [
     "./types/main.d.ts",
     "src/**/*.ts"
   ],
