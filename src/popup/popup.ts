@@ -6,6 +6,11 @@ import { createLogger } from '../logger';
 
 const logger = createLogger('popup', '#2c3e50');
 const container = document.getElementById('mangamark-popup');
+
+if (!container) {
+  throw new Error('Cannot render content without a container')
+}
+
 let popup: SnabbdomElement;
 
 sendGetStorage(init);
@@ -18,7 +23,7 @@ function init(storage: Storage) {
     events
   ]);
 
-  popup = patch(container, render(storage));
+  popup = patch(container || document.body, render(storage));
 
   onStorageUpdated(function (storage: Storage) {
     popup = update(patch, popup, storage);

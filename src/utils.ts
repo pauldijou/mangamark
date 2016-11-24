@@ -124,7 +124,7 @@ export function oneAtATime<A>(fn: () => Promise<A>, onStart = function () {}, on
 }
 
 export abstract class Option<T> {
-  static wrap<T>(value: T): Option<T> {
+  static wrap<T>(value: T | null | undefined): Option<T> {
     if (value === undefined || value === null) {
       return none;
     } else {

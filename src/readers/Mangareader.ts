@@ -61,7 +61,7 @@ export default class Mangareader extends Reader {
         const options = menu.querySelectorAll('option');
         for (let i = 0; i < options.length; ++i) {
           const option = options[i];
-          const parts = option.getAttribute('value').split('/');
+          const parts = (option.getAttribute('value') || '').split('/');
           const number = parseInt(parts[parts.length - 1], 10);
           const name = option.textContent;
           chapters.push({ number, name });
@@ -72,10 +72,10 @@ export default class Mangareader extends Reader {
 
       observer.observe(menu, { childList: true });
     }).then(chapters => {
-      const [a, slug, chapter, ...rest] = location.pathname.split('/');
+      const [a, slug, chapter, ...rest] = (location && location.pathname || '').split('/');
 
       const name = Option.wrap(doc.querySelector('h2.c2'))
-        .map(h2 => h2.textContent)
+        .map(h2 => h2.textContent || '')
         .map(text => text.replace(/Manga$/, '').trim())
         .getOrElse('');
 
@@ -96,15 +96,15 @@ export default class Mangareader extends Reader {
 
   parsePage(doc: Document, location?: Location) {
     const isLarge = Option.wrap(doc.getElementById('zoomer'))
-      .map(zoomer => zoomer.textContent)
+      .map(zoomer => zoomer.textContent || '')
       .map(txt => txt.indexOf('Large') > 0)
       .getOrElse(false);
 
     const img = Option.wrap(doc.getElementById('img'))
       .map(i => ({
         url: i.getAttribute('src'),
-        width: parseInt(i.getAttribute('width'), 10),
-        height: parseInt(i.getAttribute('height'), 10),
+        width: parseInt(i.getAttribute('width') || '0', 10),
+        height: parseInt(i.getAttribute('height') || '0', 10),
         isLarge,
       }));
 

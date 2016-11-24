@@ -2,7 +2,7 @@
   "compilerOptions": {
     "outDir": "./build/",
     "sourceMap": true,
-    "strictNullChecks": false,
+    "strictNullChecks": true,
     "target": "es5",
     "lib": [
       "scripthost",

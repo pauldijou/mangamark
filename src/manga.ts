@@ -1,4 +1,4 @@
-import { ReaderId, Manga } from './types';
+import { ReaderId, Manga, SyncManga } from './types';
 
 export function isEqual(manga1: Manga, manga2: Manga): boolean {
   return manga1 === manga2 || Object.keys(manga1).reduce((acc, key) => {
@@ -6,26 +6,12 @@ export function isEqual(manga1: Manga, manga2: Manga): boolean {
   }, true);
 }
 
-// export function fromStorage(storedManga: StoredManga): Manga {
-//   return {
-//     id: storedManga.i,
-//     name: storedManga.n,
-//     slug: storedManga.s,
-//     lastChapter: storedManga.lc,
-//     totalChapters: storedManga.tc,
-//     reader: storedManga.r,
-//     lastRead: storedManga.lr,
-//   };
-// }
-//
-// export function toStorage(manga: Manga): StoredManga {
-//   return {
-//     i: manga.id,
-//     n: manga.name,
-//     s: manga.slug,
-//     lc: manga.lastChapter,
-//     tc: manga.totalChapters,
-//     r: manga.reader,
-//     lr: manga.lastRead,
-//   };
-// }
+export function toSync(manga: Manga): SyncManga {
+  return {
+    reader: manga.reader,
+    slug: manga.slug,
+    lastChapter: manga.lastChapter.slug,
+    lastRead: manga.lastRead,
+    collapsed: manga.collapsed
+  }
+}

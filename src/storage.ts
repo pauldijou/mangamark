@@ -1,6 +1,6 @@
 // import { Promise } from 'es6-shim';
 import { ReaderId, Settings, Manga, SyncManga, Storage, SyncStorage, ParsedManga, ParsedChapter } from './types';
-import { isEqual, fromStorage, toStorage } from './manga';
+import { isEqual, toSync } from './manga';
 import { sendStorageUpdated, onGetStorage, onRefreshStorage, onMangaRead, onChapterRead } from './messages';
 import { immUpdate, isBackground, oneAtATime, Option, Some, None, updateManga, updateChapter, getManga } from './utils';
 import { defaultSettings } from './settings';
@@ -15,7 +15,11 @@ if (!isBackground()) {
 }
 
 function getKey(manga: { reader: ReaderId, slug: string }): string {
-  return manga.reader + '_' + manga.slug;
+  return 'manga__' + manga.reader + '__' + manga.slug;
+}
+
+function isKey(key: string): boolean {
+  return key.indexOf('manga__') === 0;
 }
 
 function refreshSync(): Promise<SyncStorage> {
@@ -26,7 +30,7 @@ function refreshSync(): Promise<SyncStorage> {
         if (chrome.runtime.lastError) {
           reject(chrome.runtime.lastError);
         }
-        resolve(normalize(items));
+        resolve(items);
       });
     })
   });
@@ -97,10 +101,9 @@ interface NormalizedSyncStorage {
   mangas: NormalizedSyncMangas
 }
 
-export function normalize(syncStorage: SyncStorage): { settings: Settings, mangas: NormalizedSyncMangas } {
+export function normalize(syncStorage: SyncStorage): NormalizedSyncStorage {
   const mangas = Object.keys(syncStorage)
-    .map(key => parseInt(key, 10))
-    .filter((<any>Number).isFinite)
+    .filter(isKey)
     .reduce((mangas, key) => {
       const manga = syncStorage[key];
       mangas[getKey(manga)] = manga;
@@ -108,8 +111,8 @@ export function normalize(syncStorage: SyncStorage): { settings: Settings, manga
     }, {});
 
   return {
-    settings: immUpdate(defaultSettings, syncStorage.settings),
-    mangas
+    settings: syncStorage.settings,
+    mangas: mangas
   };
 }
 
@@ -119,22 +122,37 @@ function shouldSaveManga(store: Storage, manga: Manga): boolean {
     .getOrElse(true);
 }
 
+interface PatchMangas { local: { [propName: string]: Manga }, sync: NormalizedSyncMangas }
+
+function getEmptyPatch(): PatchMangas {
+  return { local: {}, sync: {} };
+}
+
+function addToPatch(storage: Storage, manga: Manga, patch: PatchMangas): PatchMangas {
+  if (shouldSaveManga(storage, manga)) {
+    let key = getKey(manga);
+    patch.local[key] = manga;
+    patch.sync[key] = toSync(manga);
+  }
+  return patch;
+}
+
 export function saveManga(manga: Manga): void {
   get().then(s => {
-    if (shouldSaveManga(s, manga)) {
-      saveToStorage('sync', { [getKey(manga)]: toStorage(manga) });
-    }
+    const { local, sync } = addToPatch(s, manga, getEmptyPatch());
+    saveToStorage('local', local);
+    // saveToStorage('sync', sync);
   });
 }
 
 export function saveMangas(mangas: Array<Manga>): void {
   get().then(s => {
-    saveToStorage('sync', mangas.reduce((patch, manga) => {
-      if (shouldSaveManga(s, manga)) {
-        patch[getKey(manga)] = toStorage(manga);
-      }
-      return patch;
-    }, {}));
+    let { local, sync } = mangas.reduce((patch, manga) => {
+      return addToPatch(s, manga, patch);
+    }, getEmptyPatch());
+
+    saveToStorage('local', local);
+    // saveToStorage('sync', sync);
   });
 }
 
