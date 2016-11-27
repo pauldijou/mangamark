@@ -36,8 +36,13 @@ export interface SyncManga {
 // The full raw object stored and synched inside chrome.storage.sync
 //
 export interface SyncStorage {
-  settings: Settings,
-  [propName: string]: any
+  settings?: Settings,
+  [propName: string]: any | undefined
+}
+
+export interface LocalStorage {
+  settings?: Settings,
+  mangas?: Array<Manga>
 }
 
 // The storage representation used inside the extension,
@@ -63,9 +68,11 @@ export interface ParsedChapter {
   slug: string,
   number: number,
   manga: {
+    name: string,
     reader: ReaderId,
     slug: string
   },
+  chapters: Array<Chapter>,
   pages: Array<string>
 }
 

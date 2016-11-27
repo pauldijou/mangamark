@@ -38,13 +38,21 @@ function init(reader: Reader) {
         logger.info('Chapter read from', reader.id, chapter);
         initChapter(reader, chapter);
         sendChapterRead(chapter);
+      } else {
+        logger.warn('Invalid parsed chapter', chapter)
       }
+    }).catch(err => {
+      logger.error('Failed to parse chapter', err);
     });
   } else if (reader.isMangaUrl(document)) {
     reader.parseManga(document).then(manga => {
       if (reader.isValidParsedManga(manga)) {
         logger.info('Manga read from', reader.id, manga);
+      } else {
+        logger.warn('Invalid parsed manga', manga)
       }
+    }).catch(err => {
+      logger.error('Failed to parse manga', err)
     });
   }
 }
@@ -67,7 +75,7 @@ const onKeyDown = (reader, chapter) => (e) => {
 const fetchPage = (reader, chapter, pages) => (page) => {
   const idx = pages.indexOf(page);
   logger.info('fetchPage', idx, page);
-  reader.fetchPage(chapter.slug, chapter.chapter, page.name).then(page => {
+  reader.fetchPage(chapter.manga.slug, chapter.slug, page.name).then(page => {
     pages[idx].value = Option.wrap(page);
     document.dispatchEvent(renderEvent);
   }).catch(error => {
@@ -78,19 +86,19 @@ const fetchPage = (reader, chapter, pages) => (page) => {
 
 function previousChapter(reader: Reader, chapter: ParsedChapter) {
   return function () {
-    window.location.href = reader.getChapterUrl(chapter.slug, chapter.number - 1);
+    window.location.href = reader.getChapterUrl(chapter.manga.slug, chapter.number - 1);
   }
 }
 
 function nextChapter(reader: Reader, chapter: ParsedChapter) {
   return function () {
-    window.location.href = reader.getChapterUrl(chapter.slug, chapter.number + 1);
+    window.location.href = reader.getChapterUrl(chapter.manga.slug, chapter.number + 1);
   }
 }
 
 function goToChapter(reader: Reader, chapter: ParsedChapter) {
   return function (event) {
-    window.location.href = reader.getChapterUrl(chapter.slug, parseInt(event.target.value, 10));
+    window.location.href = reader.getChapterUrl(chapter.manga.slug, parseInt(event.target.value, 10));
   }
 }
 

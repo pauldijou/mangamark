@@ -1,5 +1,5 @@
 // import { Promise } from 'es6-shim';
-import { ReaderId, Settings, Manga, SyncManga, Storage, SyncStorage, ParsedManga, ParsedChapter } from './types';
+import { ReaderId, Settings, Manga, SyncManga, LocalStorage, Storage, SyncStorage, ParsedManga, ParsedChapter } from './types';
 import { isEqual, toSync } from './manga';
 import { sendStorageUpdated, onGetStorage, onRefreshStorage, onMangaRead, onChapterRead } from './messages';
 import { immUpdate, isBackground, oneAtATime, Option, Some, None, updateManga, updateChapter, getManga } from './utils';
@@ -40,13 +40,18 @@ function refreshLocal(): Promise<Storage> {
   logger.info('Refresh local storage');
   return new Promise(function (resolve, reject) {
     tryTo(['storage', 'local'], (api) => {
-      api.get(null, function (localStorage: Storage) {
+      api.get(null, function (localStorage: LocalStorage) {
         if (chrome.runtime.lastError) {
           reject(chrome.runtime.lastError);
         }
 
-        sendStorageUpdated(localStorage);
-        resolve(localStorage);
+        const storage = {
+          settings: localStorage.settings || defaultSettings,
+          mangas: localStorage.mangas || []
+        }
+
+        sendStorageUpdated(storage);
+        resolve(storage);
       });
     })
   });
@@ -106,12 +111,16 @@ export function normalize(syncStorage: SyncStorage): NormalizedSyncStorage {
     .filter(isKey)
     .reduce((mangas, key) => {
       const manga = syncStorage[key];
-      mangas[getKey(manga)] = manga;
+
+      if (manga) {
+        mangas[getKey(manga)] = manga;
+      }
+
       return mangas;
     }, {});
 
   return {
-    settings: syncStorage.settings,
+    settings: syncStorage.settings || defaultSettings,
     mangas: mangas
   };
 }
@@ -122,16 +131,22 @@ function shouldSaveManga(store: Storage, manga: Manga): boolean {
     .getOrElse(true);
 }
 
-interface PatchMangas { local: { [propName: string]: Manga }, sync: NormalizedSyncMangas }
+interface PatchMangas { local: { mangas: Array<Manga> }, sync: NormalizedSyncMangas }
 
-function getEmptyPatch(): PatchMangas {
-  return { local: {}, sync: {} };
+function getEmptyPatch(mangas: Array<Manga>): PatchMangas {
+  return { local: { mangas }, sync: {} };
 }
 
 function addToPatch(storage: Storage, manga: Manga, patch: PatchMangas): PatchMangas {
   if (shouldSaveManga(storage, manga)) {
     let key = getKey(manga);
-    patch.local[key] = manga;
+    patch.local.mangas = patch.local.mangas.map(m => {
+      if (m.slug === manga.slug) {
+        return manga;
+      } else {
+        return m;
+      }
+    });
     patch.sync[key] = toSync(manga);
   }
   return patch;
@@ -139,7 +154,7 @@ function addToPatch(storage: Storage, manga: Manga, patch: PatchMangas): PatchMa
 
 export function saveManga(manga: Manga): void {
   get().then(s => {
-    const { local, sync } = addToPatch(s, manga, getEmptyPatch());
+    const { local, sync } = addToPatch(s, manga, getEmptyPatch(s.mangas));
     saveToStorage('local', local);
     // saveToStorage('sync', sync);
   });
@@ -149,7 +164,7 @@ export function saveMangas(mangas: Array<Manga>): void {
   get().then(s => {
     let { local, sync } = mangas.reduce((patch, manga) => {
       return addToPatch(s, manga, patch);
-    }, getEmptyPatch());
+    }, getEmptyPatch(s.mangas));
 
     saveToStorage('local', local);
     // saveToStorage('sync', sync);

@@ -83,8 +83,8 @@ export function updateChapter(mangas: Array<Manga>, parsed: ParsedChapter): Mang
         lastRead: manga.lastChapter === chapter ? new Date().toISOString() : manga.lastRead,
       });
     }).getOrElse({
-      name: parsed.name,
-      slug: parsed.slug,
+      name: parsed.manga.name,
+      slug: parsed.manga.slug,
       lastChapter: chapter,
       reader: parsed.manga.reader,
       lastRead: new Date(0).toISOString(),

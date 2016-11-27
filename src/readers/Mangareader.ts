@@ -51,7 +51,7 @@ export default class Mangareader extends Reader {
       const menu = doc.getElementById('chapterMenu');
 
       if (!menu) {
-        return reject(0);
+        return reject(new Error('Could not find the DOM menu'));
       }
 
       const observer = new MutationObserver((mutations) => {
@@ -62,9 +62,10 @@ export default class Mangareader extends Reader {
         for (let i = 0; i < options.length; ++i) {
           const option = options[i];
           const parts = (option.getAttribute('value') || '').split('/');
-          const number = parseInt(parts[parts.length - 1], 10);
-          const name = option.textContent;
-          chapters.push({ number, name });
+          const slug = parts[parts.length - 1] || '';
+          const number = parseInt(slug, 10);
+          const name = (option.textContent || '').replace(/^Chapter [0-9]+:/, '').trim();
+          chapters.push({ number, name, slug });
         }
 
         resolve(chapters);
@@ -74,10 +75,14 @@ export default class Mangareader extends Reader {
     }).then(chapters => {
       const [a, slug, chapter, ...rest] = (location && location.pathname || '').split('/');
 
-      const name = Option.wrap(doc.querySelector('h2.c2'))
+      const mangaName = Option.wrap(doc.querySelector('h2.c2'))
         .map(h2 => h2.textContent || '')
         .map(text => text.replace(/Manga$/, '').trim())
         .getOrElse('');
+
+      const number = parseInt(chapter, 10);
+
+      const chapterName = chapters[number - 1] ? chapters[number - 1].name : '';
 
       const pages = Option.wrap(doc.getElementById('pageMenu'))
         .map(menu => menu.querySelectorAll('option'))
@@ -90,7 +95,7 @@ export default class Mangareader extends Reader {
         })
         .getOrElse([]);
 
-      return { reader: id, chapters, name, slug, chapter: parseInt(chapter, 10), pages };
+      return { manga: { reader: id, slug: slug, name: mangaName }, name: chapterName, slug: chapter, number, chapters, pages };
     });
   }
 
