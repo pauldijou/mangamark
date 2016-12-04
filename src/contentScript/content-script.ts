@@ -3,7 +3,8 @@ import { Storage, ParsedManga, ParsedChapter, ParsedPage } from '../types';
 import { onStorageUpdated, sendGetStorage, sendChapterRead, sendMangaRead } from '../messages';
 import { all } from '../readers';
 import Reader from '../readers/Reader';
-import { Option, getManga } from '../utils';
+import { Option, goToChapter } from '../utils';
+import { getManga } from '../manga';
 import { tryTo } from '../chrome';
 import { createLogger } from '../logger';
 
@@ -96,12 +97,6 @@ function nextChapter(reader: Reader, chapter: ParsedChapter) {
   }
 }
 
-function goToChapter(reader: Reader, chapter: ParsedChapter) {
-  return function (event) {
-    window.location.href = reader.getChapterUrl(chapter.manga.slug, parseInt(event.target.value, 10));
-  }
-}
-
 function renderEmpty() {
   return h('div', {}, []);
 }
@@ -124,19 +119,22 @@ function renderPage(page: Page): SnabbdomElement {
   return h('div.page', {}, content);
 }
 
-function renderSelectChapter(reader: Reader, chapter: ParsedChapter): SnabbdomElement {
+function renderSelectChapter(chapter: ParsedChapter): SnabbdomElement {
+  if (chapter.chapters.length === 0) {
+    return h('div', {}, []);
+  }
+
   return h(
     'select',
-    { on: { change: goToChapter(reader, chapter) } },
-    []
-    // chapter.chapters.map(chap => h('option', { attrs: { value: chap.number, selected: chap.number === chapter.chapter } }, chap.name))
+    { on: { change: goToChapter(chapter.manga) } },
+    chapter.chapters.map(chap => h('option', { attrs: { value: chap.number, selected: chap.number === chapter.number } }, chap.number + ' - ' + chap.name))
   );
 }
 
 function renderFooter(reader: Reader, chapter: ParsedChapter, pages: Array<Page>): SnabbdomElement {
   return h('div.footer', {}, [
     h('button', { on: { click: previousChapter(reader, chapter) } }, 'Previous'),
-    renderSelectChapter(reader, chapter),
+    renderSelectChapter(chapter),
     h('button', { on: { click: nextChapter(reader, chapter) } }, 'Next'),
   ]);
 }

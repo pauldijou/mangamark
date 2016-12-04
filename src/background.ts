@@ -1,8 +1,9 @@
 import { createLogger } from './connect';
 import { get as getStorage, saveMangas } from './storage';
 import { onRefreshMangas } from './messages';
-import { oneAtATime, Option, updateManga } from './utils';
+import { oneAtATime, Option } from './utils';
 import { Manga } from './types';
+import { updateManga } from './manga';
 import { get as getReader } from './readers';
 
 const logger = createLogger('background', '#c0392b');
@@ -14,7 +15,6 @@ const doRefreshManga = (mangas: Manga[]) => (manga: Manga) => {
     reader
       .fetchManga(manga.slug)
       .then(parsedManga => updateManga(mangas, parsedManga))
-      .then(Option.wrap)
       .then(opt => ({ origin: manga, fetched: opt, error: Option.empty() }))
       .catch(err => ({ origin: manga, fetched: Option.empty<Manga>(), error: Option.wrap(err) }))
   ).getOrElse(Promise.resolve({ origin: manga, fetched: Option.empty<Manga>(), error: Option.wrap(new Error('Unknow reader ' + manga.reader)) }));
@@ -26,12 +26,12 @@ function doRefreshMangas() {
     .then(storage => { logger.info('Refreshing', storage.mangas.length, 'mangas', storage.mangas); return storage.mangas; })
     .then(mangas => Promise.all(mangas.map(doRefreshManga(mangas))))
     .then(fetchedMangas => {
-      const mangas: Array<{origin: Manga, fetched: Option<Manga>}> = <any>fetchedMangas;
-      const filteredMangas: Array<Manga> = [];
-      mangas.filter(d => d.fetched.isDefined()).forEach(d => {
-        d.fetched.map(m => { filteredMangas.push(m); })
-      });
-      logger.info('Refreshed ' + filteredMangas.length + '/' + mangas.length + ' mangas in ' + (Date.now() - start) + 'ms', mangas);
+      const filteredMangas: Array<Option<Manga>> =
+        fetchedMangas
+          .filter(d => d.error.isEmpty())
+          .map(d => d.fetched);
+
+      logger.info('Refreshed ' + filteredMangas.length + '/' + fetchedMangas.length + ' mangas in ' + (Date.now() - start) + 'ms', fetchedMangas);
       return filteredMangas;
     })
     .then(saveMangas)

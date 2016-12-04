@@ -3,6 +3,8 @@
   "version": "0.0.1",
   "license": "Apache-2.0",
   "dependencies": {
+    "@types/chrome": "^0.0.35",
+    "@types/whatwg-fetch": "^0.0.32",
     "snabbdom": "^0.5.4",
     "url": "^0.11.0"
   },

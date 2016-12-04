@@ -1,8 +1,8 @@
 // import { Promise } from 'es6-shim';
 import { ReaderId, Settings, Manga, SyncManga, LocalStorage, Storage, SyncStorage, ParsedManga, ParsedChapter } from './types';
-import { isEqual, toSync } from './manga';
+import { toSync, updateManga, updateChapter, getManga, merge } from './manga';
 import { sendStorageUpdated, onGetStorage, onRefreshStorage, onMangaRead, onChapterRead } from './messages';
-import { immUpdate, isBackground, oneAtATime, Option, Some, None, updateManga, updateChapter, getManga } from './utils';
+import { immUpdate, isBackground, oneAtATime, Option, Some, None } from './utils';
 import { defaultSettings } from './settings';
 import { tryTo } from './chrome';
 import { createLogger } from './connect';
@@ -50,7 +50,6 @@ function refreshLocal(): Promise<Storage> {
           mangas: localStorage.mangas || []
         }
 
-        sendStorageUpdated(storage);
         resolve(storage);
       });
     })
@@ -125,49 +124,52 @@ export function normalize(syncStorage: SyncStorage): NormalizedSyncStorage {
   };
 }
 
-function shouldSaveManga(store: Storage, manga: Manga): boolean {
-  return getManga(store.mangas, manga.reader, manga.slug)
-    .map(m => !isEqual(manga, m))
-    .getOrElse(true);
-}
-
 interface PatchMangas { local: { mangas: Array<Manga> }, sync: NormalizedSyncMangas }
 
 function getEmptyPatch(mangas: Array<Manga>): PatchMangas {
   return { local: { mangas }, sync: {} };
 }
 
-function addToPatch(storage: Storage, manga: Manga, patch: PatchMangas): PatchMangas {
-  if (shouldSaveManga(storage, manga)) {
+function addToPatch(storage: Storage, optManga: Option<Manga>, patch: PatchMangas): PatchMangas {
+  logger.info('addToPatch', optManga, patch, storage);
+  optManga.aside(manga => {
     let key = getKey(manga);
+    let found = false;
     patch.local.mangas = patch.local.mangas.map(m => {
       if (m.slug === manga.slug) {
+        found = true;
         return manga;
       } else {
         return m;
       }
     });
+
+    if (!found) {
+      patch.local.mangas.push(manga);
+    }
+
     patch.sync[key] = toSync(manga);
-  }
+  })
+
   return patch;
 }
 
-export function saveManga(manga: Manga): void {
+export function saveManga(manga: Option<Manga>): void {
   get().then(s => {
     const { local, sync } = addToPatch(s, manga, getEmptyPatch(s.mangas));
     saveToStorage('local', local);
-    // saveToStorage('sync', sync);
+    saveToStorage('sync', sync);
   });
 }
 
-export function saveMangas(mangas: Array<Manga>): void {
+export function saveMangas(mangas: Array<Option<Manga>>): void {
   get().then(s => {
-    let { local, sync } = mangas.reduce((patch, manga) => {
+    const { local, sync } = mangas.reduce((patch, manga) => {
       return addToPatch(s, manga, patch);
     }, getEmptyPatch(s.mangas));
 
     saveToStorage('local', local);
-    // saveToStorage('sync', sync);
+    saveToStorage('sync', sync);
   });
 }
 
@@ -189,7 +191,7 @@ function mergeSyncToStorage(syncStorage: SyncStorage, storage: Storage): Storage
     mangas: storage.mangas.map(manga => {
       const syncManga = nSyncStorage.mangas[getKey(manga)];
       if (syncManga !== undefined) {
-        return immUpdate(manga, syncManga);
+        return merge(manga, syncManga);
       }
       return manga;
     })
@@ -200,9 +202,9 @@ tryTo(['storage', 'onChanged'], (api) => {
   api.addListener(function(changes, ns) {
     logger.info('storage changed', ns, changes);
     if (ns === 'sync') {
-      refreshAll();
+      refreshAll().then(setStorage);
     } else if (ns === 'local') {
-      refreshLocal();
+      refreshLocal().then(setStorage);
     }
   });
 })

@@ -1,5 +1,6 @@
 import { parse } from 'url';
-import { Html, Storage, ReaderId, Manga, Chapter, ParsedManga, ParsedChapter } from './types';
+import * as Readers from './readers';
+import { Html, Storage, ReaderId, Manga, Chapter, ParsedManga, ParsedChapter, MangaLight } from './types';
 
 export function assign<T>(src: T, patch: Object): T {
   return (<any>Object).assign(src, patch);
@@ -38,59 +39,26 @@ export function isBackground() {
   return location && location.href && location.href.indexOf('background') > 0;
 }
 
-// Return a Manga from king of its primary key
-// - the reader where it is read
-// - its slug, the unique normalized url portion with its name
-export function getManga(mangas: Array<Manga>, reader: ReaderId, slug: string): Option<Manga> {
-  return Option.wrap(mangas.filter(function (manga) {
-    return manga.reader === reader && manga.slug === slug;
-  })[0]);
-}
+export function goToChapter(manga: MangaLight) {
+  const reader = Readers.get(manga.reader)
 
-// From a parsed manga page, will try to update a known manga or create a new one if not
-// !! Do not save it in the online storage !!
-export function updateManga(mangas: Array<Manga>, parsed: ParsedManga): Manga {
-  return getManga(mangas, parsed.reader, parsed.slug)
-    .map(function (manga) {
-      return immUpdate(manga, {
-        chapters: parsed.chapters.length === 0 ? manga.chapters : parsed.chapters,
-      });
-    }).getOrElse({
-      name: parsed.name,
-      slug: parsed.slug,
-      lastChapter: parsed.chapters[parsed.chapters.length - 1],
-      reader: parsed.reader,
-      lastRead: new Date(0).toISOString(),
-      chapters: parsed.chapters,
-      collapsed: false,
-    });
-}
+  return function (event) {
+    reader.aside(r => {
+      const url = r.getChapterUrl(manga.slug, parseInt(event.target.value, 10));
 
-// Same as updateManga but with a chapter number which will be used only if greater than the last chapter
-// !! Do not save it in the online storage !!
-export function updateChapter(mangas: Array<Manga>, parsed: ParsedChapter): Manga {
-  const chapter: Chapter = { name: parsed.name, slug: parsed.slug, number: parsed.number };
-
-  return getManga(mangas, parsed.manga.reader, parsed.manga.slug)
-    .map(function (manga) {
-      const hasChapter: boolean = manga.chapters.reduce((res, chap) => {
-        return res || (chap.slug === chapter.slug);
-      }, false);
-      const lastChapter: Chapter = manga.lastChapter.number < chapter.number ? chapter : manga.lastChapter;
-
-      return immUpdate(manga, {
-        lastChapter: lastChapter,
-        lastRead: manga.lastChapter === chapter ? new Date().toISOString() : manga.lastRead,
-      });
-    }).getOrElse({
-      name: parsed.manga.name,
-      slug: parsed.manga.slug,
-      lastChapter: chapter,
-      reader: parsed.manga.reader,
-      lastRead: new Date(0).toISOString(),
-      chapters: [ chapter ],
-      collapsed: false,
-    });
+      if (chrome && chrome.tabs && chrome.tabs.getCurrent) {
+        chrome.tabs.getCurrent(tab => {
+          if (tab === undefined || tab === null) {
+            chrome.tabs.create({ url: url, active: true });
+          } else {
+            chrome.tabs.update({ url: url })
+          }
+        })
+      } else {
+        window.location.href = url;
+      }
+    })
+  }
 }
 
 export function oneAtATime<A>(fn: () => Promise<A>, onStart = function () {}, onEnd = function () {}): () => Promise<A> {
@@ -140,6 +108,7 @@ export abstract class Option<T> {
   isEmpty(): boolean { return !this.isDefined(); }
   abstract map<U>(mapper: (input: T) => U): Option<U>;
   abstract flatMap<U>(mapper: (input: T) => Option<U>): Option<U>;
+  abstract aside(mapper: (input: T) => void): Option<T>;
   abstract getOrElse(alt: T): T;
 }
 
@@ -154,6 +123,7 @@ export class Some<T> extends Option<T> {
   isDefined() { return true; }
   map(fn) { return new Some(fn(this.value)); }
   flatMap(fn) { return fn(this.value); }
+  aside(fn) { fn(this.value); return this; }
   getOrElse(alt) { return this.value; }
 }
 
@@ -162,6 +132,7 @@ export class None<T> extends Option<T> {
   isDefined() { return false; }
   map(fn) { return none; }
   flatMap(fn) { return none; }
+  aside(fn) { return none; }
   getOrElse(alt) { return alt; }
 }
 

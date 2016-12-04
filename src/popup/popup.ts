@@ -3,6 +3,7 @@ import { onStorageUpdated, sendGetStorage, sendRefreshMangas } from '../messages
 import { Manga, Storage } from '../types';
 import { tryTo } from '../chrome';
 import { createLogger } from '../logger';
+import { goToChapter } from '../utils';
 
 const logger = createLogger('popup', '#2c3e50');
 const container = document.getElementById('mangamark-popup');
@@ -39,14 +40,15 @@ function renderMenu(): SnabbdomElement {
 }
 
 function renderManga(manga: Manga): SnabbdomElement {
-  const options = [];
-  // for (let i = 0; i < manga.totalChapters) {}
+  const options = manga.chapters.reverse().map(chap =>
+    h('option', { attrs: { value: chap.number, selected: chap.number === manga.lastChapter.number } }, chap.number + ' - ' + chap.name)
+  );
 
   return h('tr', {}, [
     h('td', {}, manga.name),
-    h('td', {}, manga.lastChapter + '/' + manga.chapters.length),
+    h('td', {}, manga.lastChapter.number + '/' + manga.chapters.length),
     h('td', {}, [
-      h('select', {}, [])
+      options.length > 0 ? h('select', { on: { change: goToChapter(manga) } }, options) : h('div', {}, [])
     ]),
   ]);
 }

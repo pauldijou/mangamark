@@ -6,6 +6,12 @@ export interface Settings {
   interval: number
 }
 
+export interface MangaLight {
+  name: string,
+  reader: ReaderId,
+  slug: string
+}
+
 export interface Chapter {
   name: string,
   slug: string,
@@ -28,7 +34,7 @@ export interface Manga {
 export interface SyncManga {
   reader: ReaderId, // 20
   slug: string, // 100
-  lastChapter: string, // 15
+  lastChapter: number, // 15
   lastRead: string, // 32
   collapsed: boolean // 14
 }
@@ -67,11 +73,7 @@ export interface ParsedChapter {
   name: string,
   slug: string,
   number: number,
-  manga: {
-    name: string,
-    reader: ReaderId,
-    slug: string
-  },
+  manga: MangaLight,
   chapters: Array<Chapter>,
   pages: Array<string>
 }

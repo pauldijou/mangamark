@@ -33,10 +33,7 @@ abstract class Reader {
   abstract parsePage(doc: Document, location?: Location): Promise<ParsedPage>;
 
   fetchAndParse<A>(url: string, parser: (doc: Document, location?: Location) => Promise<A>): Promise<A> {
-    // FIXME
-    var fetch = (<any>window).fetch;
-
-    return fetch(url)
+    return window.fetch(url)
       .then(response => response.text())
       .then(htmlToDocument)
       .then(doc => parser(doc, urlToLocation(url)));
@@ -66,9 +63,10 @@ abstract class Reader {
   }
 
   isValidParsedChapter(parsedChapter: ParsedChapter): boolean {
-    return parsedChapter.name.length > 0
+    return parsedChapter.name.length >= 0
       && parsedChapter.slug.length > 0
       && parsedChapter.number > 0
+      && parsedChapter.manga.name.length > 0
       && parsedChapter.manga.slug.length > 0
       && parsedChapter.pages.length > 0;
   }
