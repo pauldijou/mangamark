@@ -1,5 +1,5 @@
 function translate(name: string, params?: string[]): string {
-  return chrome.i18n.getMessage('name', params);
+  return chrome.i18n.getMessage(name, params);
 }
 
 const i18n = {
