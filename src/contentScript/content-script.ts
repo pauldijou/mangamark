@@ -7,6 +7,7 @@ import { Option, goToChapter } from '../utils';
 import { getManga } from '../manga';
 import { tryTo } from '../chrome';
 import { createLogger } from '../logger';
+import i18n from '../i18n';
 
 const logger = createLogger('content', '#2980b9');
 logger.info('init');
@@ -105,14 +106,14 @@ function renderPage(page: Page): SnabbdomElement {
   const content = [];
 
   if (page.failed) {
-    content.push(h('span', {}, 'Failed to load page ' + page.name));
+    content.push(h('span', {}, i18n.content.failedPage(page.name)));
   } else {
     content.push(page.value.map(v => {
       return h('img', {
         attrs: { src: v.url }
       }, [])
     }).getOrElse(
-      h('span', {}, 'Loading...')
+      h('span', {}, i18n.loading + '...')
     ));
   }
 
@@ -133,9 +134,9 @@ function renderSelectChapter(chapter: ParsedChapter): SnabbdomElement {
 
 function renderFooter(reader: Reader, chapter: ParsedChapter, pages: Array<Page>): SnabbdomElement {
   return h('div.footer', {}, [
-    h('button', { on: { click: previousChapter(reader, chapter) } }, 'Previous'),
+    h('button', { on: { click: previousChapter(reader, chapter) } }, i18n.previous),
     renderSelectChapter(chapter),
-    h('button', { on: { click: nextChapter(reader, chapter) } }, 'Next'),
+    h('button', { on: { click: nextChapter(reader, chapter) } }, i18n.next),
   ]);
 }
 

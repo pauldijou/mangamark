@@ -1,0 +1,10 @@
+{
+  "name": { "message": "MangaMark", "description": "Extension name" },
+  "description": { "message": "Sauvegardez vos mangas favoris", "description": "Extension description" },
+  "options": { "message": "Options", "description": "Options label" },
+  "refresh": { "message": "Rafraichir", "description": "Refresh label" },
+  "loading": { "message": "Chargement", "description": "Loading label" },
+  "previous": { "message": "Précédent", "description": "Previous label" },
+  "next": { "message": "Suivant", "description": "Next label" },
+  "failedLoadPage": { "message": "Echec du chargement de la page $1", "description": "Load page failed" }
+}

@@ -30,6 +30,26 @@ export function merge(local: Manga, sync: SyncManga): Manga {
   return local;
 }
 
+export function fullyRead(manga: Manga): boolean {
+  return manga.lastChapter.number >= manga.chapters[manga.chapters.length - 1].number;
+}
+
+export function compareNames(n1: string, n2: string): number {
+  if (n1 < n2) { return -1; }
+  else if (n1 > n2) { return 1; }
+  else return 0;
+}
+
+export function compare(m1: Manga, m2: Manga): number {
+  if (fullyRead(m1)) {
+    if (!fullyRead(m2)) { return 1; }
+  } else {
+    if (fullyRead(m2)) { return -1; }
+  }
+
+  return compareNames(m1.name, m2.name);
+}
+
 // Return a Manga from king of its primary key
 // - the reader where it is read
 // - its slug, the unique normalized url portion with its name

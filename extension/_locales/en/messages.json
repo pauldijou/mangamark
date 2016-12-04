@@ -1,4 +1,10 @@
 {
   "name": { "message": "MangaMark", "description": "Extension name" },
-  "description": { "message": "Bookmark your favorite mangas like a boss and never miss latest releases", "description": "Extension description" }
+  "description": { "message": "Bookmark your favorite mangas like a boss and never miss latest releases", "description": "Extension description" },
+  "options": { "message": "Options", "description": "Options label" },
+  "refresh": { "message": "Refresh", "description": "Refresh label" },
+  "loading": { "message": "Loading", "description": "Loading label" },
+  "previous": { "message": "Previous", "description": "Previous label" },
+  "next": { "message": "Next", "description": "Next label" },
+  "failedLoadPage": { "message": "Failed to load page $1", "description": "Load page failed" }
 }
