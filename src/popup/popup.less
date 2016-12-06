@@ -1,14 +1,16 @@
 @import '../styles/variables';
 @import '../styles/reset';
 
-#mangamark-popup {
-  // min-width: 500px;
-  padding: 10px;
+html, body, #mangamark-popup {
+  width: 500px;
+}
 
+#mangamark-popup {
   .menu {
     display: flex;
     flex-direction: row;
     align-items: center;
+    padding: 10px;
 
     h1 {
       flex-grow: 1;
@@ -40,8 +42,38 @@
   }
 
   .mangas {
-    .name {
-      white-space: nowrap;
+    width: 100%;
+
+    .manga {
+      &.unfinished {
+        color: #ecf0f1;
+        background-color: #c0392b;
+      }
+
+      > * {
+        padding: 5px;
+      }
+
+      .name {
+        white-space: nowrap;
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .total {
+        text-align: center;
+      }
+
+      .actions {
+        text-align: center;
+      }
+
+      .select {
+        select {
+          width: 100%;
+        }
+      }
     }
   }
 }

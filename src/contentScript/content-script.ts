@@ -3,7 +3,7 @@ import { Storage, ParsedManga, ParsedChapter, ParsedPage } from '../types';
 import { onStorageUpdated, sendGetStorage, sendChapterRead, sendMangaRead } from '../messages';
 import { all } from '../readers';
 import Reader from '../readers/Reader';
-import { Option, goToChapter } from '../utils';
+import { Option, selectChapter } from '../utils';
 import { getManga } from '../manga';
 import { tryTo } from '../chrome';
 import { createLogger } from '../logger';
@@ -127,7 +127,7 @@ function renderSelectChapter(chapter: ParsedChapter): SnabbdomElement {
 
   return h(
     'select',
-    { on: { change: goToChapter(chapter.manga) } },
+    { on: { change: selectChapter(chapter.manga) } },
     chapter.chapters.map(chap => h('option', { attrs: { value: chap.number, selected: chap.number === chapter.number } }, chap.number + ' - ' + chap.name))
   );
 }

@@ -4,7 +4,7 @@ import { Manga, Storage } from '../types';
 import { compare } from '../manga';
 import { tryTo } from '../chrome';
 import { createLogger } from '../logger';
-import { goToChapter } from '../utils';
+import { goToChapter, selectChapter } from '../utils';
 import i18n from '../i18n';
 
 const logger = createLogger('popup', '#2c3e50');
@@ -46,11 +46,18 @@ function renderManga(manga: Manga): SnabbdomElement {
     h('option', { attrs: { value: chap.number, selected: chap.number === manga.lastChapter.number } }, chap.number + ' - ' + chap.name)
   );
 
-  return h('tr', {}, [
+  // Remember, we reversed the chapters ordering to display last chapters first
+  const finalChapter = manga.chapters[0];
+  const isFinished = manga.lastChapter.number >= finalChapter.number;
+
+  return h('tr.manga' + (isFinished ? '' : '.unfinished'), {}, [
     h('td.name', {}, manga.name),
-    h('td.total', {}, manga.lastChapter.number + '/' + manga.chapters.length),
+    h('td.total', {}, manga.lastChapter.number + '/' + finalChapter.number),
+    h('td.actions', {}, [
+      h('span', { on: { click: function() { goToChapter(manga, manga.lastChapter.number + 1) } } }, '>>')
+    ]),
     h('td.select', {}, [
-      options.length > 0 ? h('select', { on: { change: goToChapter(manga) } }, options) : h('div', {}, [])
+      options.length > 0 ? h('select', { on: { change: selectChapter(manga) } }, options) : h('div', {}, [])
     ]),
   ]);
 }
@@ -60,7 +67,7 @@ function renderMangas(mangas: Array<Manga>): SnabbdomElement {
     return h('div.empty', {}, 'You don\'t have any manga yet');
   }
 
-  return h('table.mangas', {}, mangas.sort(compare).map(renderManga));
+  return h('div.mangas', {}, mangas.sort(compare).map(renderManga));
 }
 
 function render(storage: Storage): SnabbdomElement {

@@ -131,7 +131,6 @@ function getEmptyPatch(mangas: Array<Manga>): PatchMangas {
 }
 
 function addToPatch(storage: Storage, optManga: Option<Manga>, patch: PatchMangas): PatchMangas {
-  logger.info('addToPatch', optManga, patch, storage);
   optManga.aside(manga => {
     let key = getKey(manga);
     let found = false;

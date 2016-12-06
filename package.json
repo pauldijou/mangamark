@@ -22,6 +22,9 @@
   },
   "scripts": {
     "build": "webpack --config webpack.config.js",
-    "start": "webpack --config webpack.config.js --watch"
+    "start": "webpack --config webpack.config.js --watch",
+    "clean": "rm -rf extension/build",
+    "clean-maps": "rm -rf extension/build/*.map",
+    "release": "npm run clean && webpack --config webpack.config.js --release && npm run clean-maps"
   }
 }

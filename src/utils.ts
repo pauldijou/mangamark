@@ -39,26 +39,31 @@ export function isBackground() {
   return location && location.href && location.href.indexOf('background') > 0;
 }
 
-export function goToChapter(manga: MangaLight) {
-  const reader = Readers.get(manga.reader)
-
-  return function (event) {
-    reader.aside(r => {
-      const url = r.getChapterUrl(manga.slug, parseInt(event.target.value, 10));
-
-      if (chrome && chrome.tabs && chrome.tabs.getCurrent) {
-        chrome.tabs.getCurrent(tab => {
-          if (tab === undefined || tab === null) {
-            chrome.tabs.create({ url: url, active: true });
-          } else {
-            chrome.tabs.update({ url: url })
-          }
-        })
+export function open(url) {
+  if (chrome && chrome.tabs && chrome.tabs.getCurrent) {
+    chrome.tabs.getCurrent(tab => {
+      if (tab === undefined || tab === null) {
+        chrome.tabs.create({ url: url, active: true });
       } else {
-        window.location.href = url;
+        chrome.tabs.update({ url: url })
       }
     })
+  } else {
+    window.location.href = url;
   }
+}
+
+export function goToChapter(manga: MangaLight, chapter: number) {
+  const reader = Readers.get(manga.reader);
+  reader.aside(r => {
+    open(r.getChapterUrl(manga.slug, chapter));
+  });
+}
+
+export function selectChapter(manga: MangaLight) {
+  return function (event) {
+    goToChapter(manga, parseInt(event.target.value, 10));
+  };
 }
 
 export function oneAtATime<A>(fn: () => Promise<A>, onStart = function () {}, onEnd = function () {}): () => Promise<A> {
