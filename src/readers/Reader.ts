@@ -9,23 +9,23 @@ abstract class Reader {
     return url.indexOf(this.baseUrl) === 0;
   }
 
-  abstract isMangaUrl(doc: Document): boolean
-  abstract isChapterUrl(doc: Document): boolean
+  abstract isMangaUrl(doc: Document, location: Location): boolean
+  abstract isChapterUrl(doc: Document, location: Location): boolean
 
   getMangaUrl(slug: string): string {
     return this.baseUrl + '/' + slug;
   }
 
-  getChapterUrl(slug: string, chapter: number): string {
+  getChapterUrl(slug: string, chapter: string): string {
     return this.getMangaUrl(slug) + '/' + chapter;
   }
 
-  getPageUrl(slug: string, chapter: number, page: string): string {
+  getPageUrl(slug: string, chapter: string, page: string): string {
     return this.getChapterUrl(slug, chapter) + '/' + page;
   }
 
   getLastChapterUrl(manga: Manga): string {
-    return this.getChapterUrl(manga.slug, manga.lastChapter.number);
+    return this.getChapterUrl(manga.slug, manga.lastChapter.slug);
   }
 
   abstract parseManga(doc: Document, location?: Location): Promise<ParsedManga>;
@@ -43,11 +43,11 @@ abstract class Reader {
     return this.fetchAndParse(this.getMangaUrl(slug), this.parseManga);
   }
 
-  fetchChapter(slug: string, chapter: number): Promise<ParsedChapter> {
+  fetchChapter(slug: string, chapter: string): Promise<ParsedChapter> {
     return this.fetchAndParse(this.getChapterUrl(slug, chapter), this.parseChapter);
   }
 
-  fetchPage(slug: string, chapter: number, page: string): Promise<ParsedPage> {
+  fetchPage(slug: string, chapter: string, page: string): Promise<ParsedPage> {
     return this.fetchAndParse(this.getPageUrl(slug, chapter, page), this.parsePage);
   }
 
@@ -65,7 +65,7 @@ abstract class Reader {
   isValidParsedChapter(parsedChapter: ParsedChapter): boolean {
     return parsedChapter.name.length >= 0
       && parsedChapter.slug.length > 0
-      && parsedChapter.number > 0
+      && parsedChapter.number >= 0
       && parsedChapter.manga.name.length > 0
       && parsedChapter.manga.slug.length > 0
       && parsedChapter.pages.length > 0;

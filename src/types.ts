@@ -1,4 +1,4 @@
-export type ReaderId = 'mangareader' | 'mangafox';
+export type ReaderId = 'mangareader' | 'mangafox' | 'webtoons';
 
 // Global settigns for the extension
 export interface Settings {

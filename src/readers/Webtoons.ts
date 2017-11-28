@@ -1,47 +1,57 @@
+import url from 'url';
 import Reader from './Reader';
 import { Option } from '../utils';
 import { ReaderId, Chapter } from '../types';
 
-const id: ReaderId = 'mangareader';
+const id: ReaderId = 'webtoons';
 
 export default class Mangareader extends Reader {
   constructor() {
     super();
     this.id = id;
-    this.baseUrl = 'http://www.mangareader.net';
+    this.baseUrl = 'http://www.webtoons.com';
   }
 
   isMangaUrl(doc: Document, location: Location): boolean {
-    return doc.getElementById('readmangasum') !== null;
+    return doc.getElementById('_listUl') !== null;
   }
 
   isChapterUrl(doc: Document, location: Location): boolean {
-    return doc.getElementById('topchapter') !== null;
+    return doc.getElementById('toolbar') !== null
+      && doc.getElementById('_imageList') !== null
+      && location.href.indexOf('/viewer') > 0;
+  }
+
+  parseListPage(doc: Document): Array<Chapter> {
+    return Option.wrap(doc.getElementById('_listUl'))
+      .map(list => list.querySelectorAll('li'))
+      .map(Array.from)
+      .map(chapters => chapters.map(chapter => {
+        const href = Option.wrap(chapter.querySelector('a')).map(a => a.getAttribute('href')).map(a => url.parse(a, true))
+
+        return {
+          name: Option.wrap(chapter.querySelector('.subj > span')).map(s => s.textContent || '').getOrElse('').trim(),
+          slug: '',
+          number: href.map(u => u.query.episode_no)
+            .map(num => parseInt(num, 10))
+            .getOrElse(0)
+        }
+      }
+      ))
+      .getOrElse([]);
   }
 
   parseManga(doc: Document, location?: Location) {
     if (!location) { location = doc.location; }
 
-    const [a, slug, ...rest] = location.pathname.split('/');
+    const [a, lang, genre, slug, ...rest] = location.pathname.split('/');
 
-    const name = Option.wrap(doc.querySelector('h2.aname'))
-      .map(h2 => h2.textContent)
+    const name = Option.wrap(doc.querySelector('.info h1.subj'))
+      .map(element => element.textContent || '')
+      .map(title => title.trim())
       .getOrElse('');
 
-    const chapters = Option.wrap(doc.getElementById('chapterlist'))
-      .map(list => list.querySelectorAll('tr > td:first-child'))
-      .map(Array.from)
-      .map(tds => tds.map(td => ({
-        name: td.textContent.split(':').pop().trim(),
-        number: Option.wrap(td.querySelector('a'))
-          .map(a => a.getAttribute('href'))
-          .map(href => href.split('/').pop())
-          .map(num => parseInt(num, 10))
-          .getOrElse(0)
-      })))
-      .getOrElse([]);
-
-    return Promise.resolve({ reader: id, name, slug, chapters });
+    return Promise.resolve({ reader: id, name, slug, chapters: this.parseListPage(doc) });
   }
 
   parseChapter(doc: Document, location?: Location) {

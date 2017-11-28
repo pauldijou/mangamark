@@ -32,9 +32,9 @@ Option
 
 function init(reader: Reader) {
   logger.info('Location', location.pathname)
-  logger.info('isChapterUrl?', reader.isChapterUrl(document), 'isMangaUrl?', reader.isMangaUrl(document));
+  logger.info('isChapterUrl?', reader.isChapterUrl(document, location), 'isMangaUrl?', reader.isMangaUrl(document, location));
 
-  if (reader.isChapterUrl(document)) {
+  if (reader.isChapterUrl(document, location)) {
     reader.parseChapter(document).then(chapter => {
       if (reader.isValidParsedChapter(chapter)) {
         logger.info('Chapter read from', reader.id, chapter);
@@ -46,7 +46,7 @@ function init(reader: Reader) {
     }).catch(err => {
       logger.error('Failed to parse chapter', err);
     });
-  } else if (reader.isMangaUrl(document)) {
+  } else if (reader.isMangaUrl(document, location)) {
     reader.parseManga(document).then(manga => {
       if (reader.isValidParsedManga(manga)) {
         logger.info('Manga read from', reader.id, manga);
@@ -103,7 +103,7 @@ function renderEmpty() {
 }
 
 function renderPage(page: Page): SnabbdomElement {
-  const content = [];
+  const content: Array<SnabbdomElement> = [];
 
   if (page.failed) {
     content.push(h('span', {}, i18n.content.failedPage(page.name)));

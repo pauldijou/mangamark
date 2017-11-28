@@ -9,11 +9,11 @@ declare module "url" {
     pathname: string,
     search: string,
     path: string,
-    // query: string,
+    query: { [propName: string]: string },
     hash?: string
   }
 
-  export function parse(urlStr: string): Url;
+  export function parse(urlStr: string, query: boolean): Url;
   export function format(url: Url): string;
   export function resolve(from: string, to: string): string;
 }

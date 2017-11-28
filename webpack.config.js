@@ -2,9 +2,9 @@ var path = require('path');
 var webpack = require("webpack");
 var ExtractTextPlugin = require('extract-text-webpack-plugin');
 
-var extractPopup = new ExtractTextPlugin('popup.css');
-var extractOptions = new ExtractTextPlugin('options.css');
-var extractContent = new ExtractTextPlugin('content.css');
+var extractPopup   = new ExtractTextPlugin({ filename: 'popup.css'   });
+var extractOptions = new ExtractTextPlugin({ filename: 'options.css' });
+var extractContent = new ExtractTextPlugin({ filename: 'content.css' });
 
 var plugins = [
   extractPopup,
@@ -13,6 +13,7 @@ var plugins = [
 ];
 
 var isRelease = process.argv.indexOf('--release') > 0;
+var isWatching = process.argv.indexOf('--watch') > 0;
 
 if (isRelease) {
   plugins.push(new webpack.optimize.UglifyJsPlugin({
@@ -31,8 +32,12 @@ if (isRelease) {
   }))
 }
 
-var cssLoader = isRelease ? 'css!less' : 'css?sourceMap!less?sourceMap';
-var preLoaders = isRelease ? [] : [ { test: /\.js$/, loader: 'source-map-loader' } ]
+// var cssLoader = isRelease ? 'css!less' : 'css?sourceMap!less?sourceMap';
+
+var extractPlugionOptions = {
+  fallback: 'style-loader',
+  use: [ 'css-loader' ].concat([ 'less-loader' ])
+}
 
 module.exports = {
   entry: {
@@ -50,37 +55,40 @@ module.exports = {
 
   devtool: 'source-map',
 
+  watch: isWatching,
+
   resolve: {
-    extensions: ['', '.json', '.webpack.js', '.web.js', '.ts', '.js']
+    extensions: ['.json', '.webpack.js', '.web.js', '.ts', '.js']
   },
 
   module: {
-    loaders: [
-      {
-        test: /\.json$/,
-        loader: 'json-loader',
-      },
+    rules: [
       {
         test: /\.ts$/,
-        loader: 'ts-loader'
+        use: [ 'ts-loader' ]
       },
       {
         test: /\.less$/,
         include: [ path.resolve(__dirname, 'src', 'popup') ],
-        loader: extractPopup.extract('style', cssLoader)
+        use: extractPopup.extract(extractPlugionOptions)
       },
       {
         test: /\.less$/,
         include: [ path.resolve(__dirname, 'src', 'options') ],
-        loader: extractOptions.extract('style', cssLoader)
+        use: extractOptions.extract(extractPlugionOptions)
       },
       {
         test: /\.less$/,
         include: [ path.resolve(__dirname, 'src', 'contentScript') ],
-        loader: extractContent.extract('style', cssLoader)
+        use: extractContent.extract(extractPlugionOptions)
       }
-    ],
-    preLoaders: preLoaders
+    ].concat(isRelease ? [] : [
+      {
+        test: /\.js$/,
+        use: 'source-map-loader',
+        enforce: 'pre'
+      }
+    ])
   },
 
   plugins: plugins
